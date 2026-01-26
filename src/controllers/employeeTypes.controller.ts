@@ -13,7 +13,7 @@ export const createEmployeeTypeController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'delete_employeeTypes')
+    requirePermission(req, 'create_employeeTypes')
     const { name } = req.body
     const employeeType = await createEmployeeType(name)
     res.status(201).json({ status: 'success', data: employeeType })
@@ -28,7 +28,7 @@ export const getEmployeeTypesController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'delete_employeeTypes')
+    requirePermission(req, 'get_employeeTypes')
     const employeeTypes = await getEmployeeTypes()
     res.json({ status: 'success', data: employeeTypes })
   } catch (err) {
@@ -42,7 +42,7 @@ export const updateEmployeeTypeController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'delete_employeeTypes')
+    requirePermission(req, 'edit_employeeTypes')
     const { employeeTypeId } = req.params
     const { name } = req.body
 

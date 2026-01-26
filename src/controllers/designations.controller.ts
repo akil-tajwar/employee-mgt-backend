@@ -13,7 +13,7 @@ export const createDesignationController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'delete_designations')
+    requirePermission(req, 'create_designations')
     const { name } = req.body
     const designation = await createDesignation(name)
     res.status(201).json({ status: 'success', data: designation })
@@ -28,7 +28,7 @@ export const getDesignationsController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'delete_designations')
+    requirePermission(req, 'get_designations')
     const designations = await getDesignations()
     res.json({ status: 'success', data: designations })
   } catch (err) {
@@ -42,7 +42,7 @@ export const updateDesignationController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'delete_designations')
+    requirePermission(req, 'edit_designations')
     const { designationId } = req.params
     const { name } = req.body
 
