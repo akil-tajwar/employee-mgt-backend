@@ -1,4 +1,3 @@
-import { create } from 'domain'
 import { relations, sql } from 'drizzle-orm'
 import {
   sqliteTable,
@@ -25,9 +24,7 @@ export const userModel = sqliteTable('users', {
     onDelete: 'set null',
   }),
   isPasswordResetRequired: integer('is_password_reset_required').default(1),
-  createdBy: integer('created_by').notNull(),
   createdAt: integer('created_at').default(sql`(unixepoch())`),
-  updatedBy: integer('updated_by'),
   updatedAt: integer('updated_at'),
 })
 
@@ -102,7 +99,7 @@ export const employeeModel = sqliteTable(
     gender: text('gender').notNull(),
     bloodGroup: text('blood_group'),
     basicSalary: real('basic_salary').notNull(),
-    gorssSalary: real('gross_salary').notNull(),
+    grossSalary: real('gross_salary').notNull(),
     isActive: integer('is_active').notNull().default(1),
     empCode: text('emp_code').notNull().unique(),
     departmentId: integer('department_id')

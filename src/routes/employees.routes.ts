@@ -11,9 +11,6 @@ import { authenticateUser } from '../middlewares/auth.middleware'
 
 const router = express.Router()
 
-/* ================================
-   CREATE EMPLOYEE
-================================ */
 router.post(
   '/create',
   upload.fields([
@@ -22,10 +19,6 @@ router.post(
   authenticateUser,
   createEmployeeController
 )
-
-/* ================================
-   UPDATE EMPLOYEE
-================================ */
 router.patch(
   '/edit/:id',
   upload.fields([
@@ -34,16 +27,8 @@ router.patch(
   authenticateUser,
   updateEmployeeController
 )
-
-/* ================================
-   READ EMPLOYEES
-================================ */
 router.get('/getAll', authenticateUser, getAllEmployeesController)
 router.get('/getById/:id', authenticateUser, getEmployeeByIdController)
-
-/* ================================
-   DELETE EMPLOYEE
-================================ */
 router.delete('/delete/:id', authenticateUser, deleteEmployeeController)
 
 export default router
