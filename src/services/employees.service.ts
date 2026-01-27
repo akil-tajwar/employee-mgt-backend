@@ -7,9 +7,7 @@ import {
   employeeTypeModel,
 } from '../schemas'
 
-/* ================================
-   TYPES
-================================ */
+//TYPES
 export type EmployeeDetails = {
   fullName: string
   email: string
@@ -31,11 +29,11 @@ export type EmployeeDetails = {
   departmentId: number
   designationId: number
   employeeTypeId: number
+  createdBy: number
 }
 
-/* ================================
-   CREATE EMPLOYEE
-================================ */
+
+//CREATE
 export const createEmployee = async (data: EmployeeDetails) => {
   return await db.transaction(async (tx) => {
     const result = await tx.insert(employeeModel).values({
@@ -59,6 +57,7 @@ export const createEmployee = async (data: EmployeeDetails) => {
       departmentId: data.departmentId,
       designationId: data.designationId,
       employeeTypeId: data.employeeTypeId,
+      createdBy: data.createdBy,
     })
 
     const employeeId = Number(result.lastInsertRowid)
@@ -71,9 +70,8 @@ export const createEmployee = async (data: EmployeeDetails) => {
   })
 }
 
-/* ================================
-   UPDATE EMPLOYEE
-================================ */
+
+//UPDATE
 export const updateEmployee = async (
   employeeId: number,
   data: Partial<EmployeeDetails>
@@ -121,9 +119,8 @@ export const updateEmployee = async (
   })
 }
 
-/* ================================
-   GET ALL EMPLOYEES
-================================ */
+
+//GET ALL
 export const getAllEmployees = async () => {
   return await db
     .select({
@@ -156,9 +153,8 @@ export const getAllEmployees = async () => {
     )
 }
 
-/* ================================
-   GET EMPLOYEE BY ID
-================================ */
+
+//GET ONE
 export const getEmployeeById = async (employeeId: number) => {
   const employee = await db
     .select({
@@ -202,9 +198,8 @@ export const getEmployeeById = async (employeeId: number) => {
   return employee.length ? employee[0] : null
 }
 
-/* ================================
-   DELETE EMPLOYEE
-================================ */
+
+//DELETE
 export const deleteEmployee = async (employeeId: number) => {
   return await db.transaction(async (tx) => {
     const existing = await tx.query.employeeModel.findFirst({

@@ -11,7 +11,7 @@ const router = Router()
 
 router.post('/create', authenticateUser, createDesignationController)
 router.get('/getAll', authenticateUser, getDesignationsController)
-router.put('/edit/:designationId', authenticateUser, updateDesignationController)
+router.patch('/edit/:designationId', authenticateUser, updateDesignationController)
 router.delete('/delete/:designationId', authenticateUser, deleteDesignationController)
 
 export default router
