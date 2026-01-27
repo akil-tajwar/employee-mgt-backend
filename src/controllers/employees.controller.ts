@@ -15,6 +15,7 @@ export const createEmployeeController = async (req: Request, res: Response) => {
   try {
     requirePermission(req, 'create_employee')
 
+    console.log('🚀 ~ createEmployeeController ~ req.body:', req.body)
     const files = req.files as {
       [fieldname: string]: Express.Multer.File[]
     }
@@ -27,14 +28,16 @@ export const createEmployeeController = async (req: Request, res: Response) => {
     const results = []
 
     for (const item of payload) {
-      const employeeDetails = typeof item === 'string' ? JSON.parse(item) : item
+      const employeeDetails =
+        typeof item.employeeDetails === 'string'
+          ? JSON.parse(item.employeeDetails)
+          : item.employeeDetails
 
-      // Handle photo upload
       if (files?.photoUrl?.[0]) {
         employeeDetails.photoUrl = `${baseUrl}${files.photoUrl[0].filename}`
       }
 
-      const employee = await createEmployee(employeeDetails)
+      const employee = createEmployee(employeeDetails)
       results.push(employee)
     }
 
@@ -129,9 +132,7 @@ export const getEmployeeByIdController = async (
     const data = await getEmployeeById(employeeId)
 
     if (!data) {
-      res
-        .status(404)
-        .json({ success: false, message: 'Employee not found' })
+      res.status(404).json({ success: false, message: 'Employee not found' })
     }
 
     res.json({ success: true, data })

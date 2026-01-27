@@ -2,11 +2,15 @@ import { Router } from "express";
 import authRoutes from "./auth.routes";
 import departmentsRoutes from "./departments.routes";
 import designationsRoutes from "./designations.routes";
+import employeeTypeRoutes from "./employeeTypes.routes";
+import employeeRoutes from "./employees.routes";
 
 const router=Router()
 
 router.use('/auth',authRoutes)
 router.use('/departments',departmentsRoutes)
 router.use('/designations',designationsRoutes)
+router.use('/employeeTypes',employeeTypeRoutes)
+router.use('/employees',employeeRoutes)
 
 export default router;

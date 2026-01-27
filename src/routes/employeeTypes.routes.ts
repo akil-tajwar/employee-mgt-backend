@@ -11,7 +11,7 @@ const router = Router()
 
 router.post('/create', authenticateUser, createEmployeeTypeController)
 router.get('/getAll', authenticateUser, getEmployeeTypesController)
-router.put('/edit/:employeeTypeId', authenticateUser, updateEmployeeTypeController)
+router.patch('/edit/:employeeTypeId', authenticateUser, updateEmployeeTypeController)
 router.delete('/delete/:employeeTypeId', authenticateUser, deleteEmployeeTypeController)
 
 export default router

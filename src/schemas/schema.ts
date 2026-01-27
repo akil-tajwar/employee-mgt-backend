@@ -1,5 +1,11 @@
 import { relations, sql } from 'drizzle-orm'
-import { sqliteTable, integer, text, check, real } from 'drizzle-orm/sqlite-core'
+import {
+  sqliteTable,
+  integer,
+  text,
+  check,
+  real,
+} from 'drizzle-orm/sqlite-core'
 
 // ========================
 // Roles & Permissions
@@ -19,7 +25,7 @@ export const userModel = sqliteTable('users', {
   }),
   isPasswordResetRequired: integer('is_password_reset_required').default(1),
   createdAt: integer('created_at').default(sql`(unixepoch())`),
-  updatedAt: integer('updated_at').default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at'),
 })
 
 export const permissionsModel = sqliteTable('permissions', {
@@ -49,11 +55,19 @@ export const userRolesModel = sqliteTable('user_roles', {
 export const departmentModel = sqliteTable('departments', {
   departmentId: integer('department_id').primaryKey({ autoIncrement: true }),
   departmentName: text('department_name').notNull(),
+  createdBy: integer('created_by').notNull(),
+  createdAt: integer('created_at').default(sql`(unixepoch())`),
+  updatedBy: integer('updated_by'),
+  updatedAt: integer('updated_at'),
 })
 
 export const designationModel = sqliteTable('designations', {
   designationId: integer('designation_id').primaryKey({ autoIncrement: true }),
   designationName: text('designation_name').notNull(),
+  createdBy: integer('created_by').notNull(),
+  createdAt: integer('created_at').default(sql`(unixepoch())`),
+  updatedBy: integer('updated_by'),
+  updatedAt: integer('updated_at'),
 })
 
 export const employeeTypeModel = sqliteTable('employee_types', {
@@ -61,6 +75,10 @@ export const employeeTypeModel = sqliteTable('employee_types', {
     autoIncrement: true,
   }),
   employeeTypeName: text('employee_type_name').notNull(),
+  createdBy: integer('created_by').notNull(),
+  createdAt: integer('created_at').default(sql`(unixepoch())`),
+  updatedBy: integer('updated_by'),
+  updatedAt: integer('updated_at'),
 })
 
 export const employeeModel = sqliteTable(
@@ -81,7 +99,7 @@ export const employeeModel = sqliteTable(
     gender: text('gender').notNull(),
     bloodGroup: text('blood_group'),
     basicSalary: real('basic_salary').notNull(),
-    gorssSalary: real('gross_salary').notNull(),
+    grossSalary: real('gross_salary').notNull(),
     isActive: integer('is_active').notNull().default(1),
     empCode: text('emp_code').notNull().unique(),
     departmentId: integer('department_id')
@@ -93,6 +111,10 @@ export const employeeModel = sqliteTable(
     employeeTypeId: integer('employee_type_id')
       .references(() => employeeTypeModel.employeeTypeId)
       .notNull(),
+    createdBy: integer('created_by').notNull(),
+    createdAt: integer('created_at').default(sql`(unixepoch())`),
+    updatedBy: integer('updated_by'),
+    updatedAt: integer('updated_at'),
   },
   (table) => ({
     genderCheck: check(
