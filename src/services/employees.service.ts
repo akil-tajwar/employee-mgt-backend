@@ -29,6 +29,7 @@ export type Employee = {
   departmentId: number
   designationId: number
   employeeTypeId: number
+  weekends: number[]
   createdBy: number
 }
 

@@ -128,6 +128,36 @@ export const employeeModel = sqliteTable(
   })
 )
 
+export const weekendModel = sqliteTable(
+  'weekends',
+  {
+    weekendId: integer('weekend_id').primaryKey({ autoIncrement: true }),
+    day: text('day').notNull(),
+  },
+  (table) => ({
+    dayCheck: check(
+      'weekend_check',
+      sql`${table.day} in ('Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')`
+    ),
+  })
+)
+
+
+export const employeeWeekendModel = sqliteTable(
+  'employee_weekends',
+  {
+    employeeWeekendId: integer('id').primaryKey({ autoIncrement: true }),
+    employeeId: integer('employee_id')
+      .notNull()
+      .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
+
+    weekendId: integer('weekend_id')
+      .notNull()
+      .references(() => weekendModel.weekendId, { onDelete: 'cascade' }),
+  },
+)
+
+
 // ========================
 // Relations
 // ========================
@@ -181,6 +211,20 @@ export const employeeRelations = relations(employeeModel, ({ one }) => ({
     references: [employeeTypeModel.employeeTypeId],
   }),
 }))
+
+export const employeeWeekendRelations = relations(
+  employeeWeekendModel,
+  ({ one }) => ({
+    employee: one(employeeModel, {
+      fields: [employeeWeekendModel.employeeId],
+      references: [employeeModel.employeeId],
+    }),
+    weekend: one(weekendModel, {
+      fields: [employeeWeekendModel.weekendId],
+      references: [weekendModel.weekendId],
+    }),
+  })
+)
 
 // ========================
 // Types
