@@ -143,19 +143,18 @@ export const weekendModel = sqliteTable(
   })
 )
 
-export const employeeWeekendModel = sqliteTable(
-  'employee_weekends',
-  {
-    employeeWeekendId: integer('employee_weekend_id').primaryKey({ autoIncrement: true }),
-    employeeId: integer('employee_id')
-      .notNull()
-      .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
+export const employeeWeekendModel = sqliteTable('employee_weekends', {
+  employeeWeekendId: integer('employee_weekend_id').primaryKey({
+    autoIncrement: true,
+  }),
+  employeeId: integer('employee_id')
+    .notNull()
+    .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
 
-    weekendId: integer('weekend_id')
-      .notNull()
-      .references(() => weekendModel.weekendId, { onDelete: 'cascade' }),
-  },
-)
+  weekendId: integer('weekend_id')
+    .notNull()
+    .references(() => weekendModel.weekendId, { onDelete: 'cascade' }),
+})
 
 export const holidayModel = sqliteTable('holidays', {
   holidayId: integer('holiday_id').primaryKey({ autoIncrement: true }),
@@ -169,6 +168,38 @@ export const holidayModel = sqliteTable('holidays', {
   updatedBy: integer('updated_by'),
   updatedAt: integer('updated_at'),
 })
+
+export const leaveTypeModel = sqliteTable('leave_types', {
+  leaveTypeId: integer('leave_type_id').primaryKey({ autoIncrement: true }),
+  leaveTypeName: text('leave_type_name').notNull(),
+  createdBy: integer('created_by').notNull(),
+  createdAt: integer('created_at').default(sql`(unixepoch())`),
+  updatedBy: integer('updated_by'),
+  updatedAt: integer('updated_at'),
+})
+
+export const employeeLeaveModel = sqliteTable(
+  'employee_leaves',
+  {
+    employeeLeaveId: integer('employee_leave_id').primaryKey({
+      autoIncrement: true,
+    }),
+    employeeId: integer('employee_id')
+      .notNull()
+      .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
+    startDate: text('start_date').notNull(),
+    endDate: text('end_date').notNull(),
+    noOfDays: integer('no_of_days').notNull(),
+    leaveTypeId: integer('leave_type_id').notNull().references(() => leaveTypeModel.leaveTypeId, {
+      onDelete: 'cascade'
+    }),
+    description: text('description'),
+    createdBy: integer('created_by').notNull(),
+    createdAt: integer('created_at').default(sql`(unixepoch())`),
+    updatedBy: integer('updated_by'),
+    updatedAt: integer('updated_at'),
+  }
+)
 
 // ========================
 // Relations
@@ -238,6 +269,20 @@ export const employeeWeekendRelations = relations(
   })
 )
 
+export const employeeLeaveRelations = relations(
+  employeeLeaveModel,
+  ({ one }) => ({
+    employee: one(employeeModel, {
+      fields: [employeeLeaveModel.employeeId],
+      references: [employeeModel.employeeId],
+    }),
+    leaveType: one(leaveTypeModel, {
+      fields: [employeeLeaveModel.leaveTypeId],
+      references: [leaveTypeModel.leaveTypeId],
+    })
+  })
+)
+
 // ========================
 // Types
 // ========================
@@ -263,3 +308,7 @@ export type Weekend = typeof weekendModel.$inferSelect
 export type NewWeekend = typeof weekendModel.$inferInsert
 export type Holiday = typeof holidayModel.$inferSelect
 export type NewHoliday = typeof holidayModel.$inferInsert
+export type LeaveType = typeof leaveTypeModel.$inferSelect
+export type NewLeaveType = typeof leaveTypeModel.$inferInsert
+export type EmployeeLeave = typeof employeeLeaveModel.$inferSelect
+export type NewEmployeeLeave = typeof employeeLeaveModel.$inferInsert
