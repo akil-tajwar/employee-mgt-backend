@@ -5,6 +5,7 @@ import {
   departmentModel,
   designationModel,
   employeeTypeModel,
+  employeeWeekendModel,
 } from '../schemas'
 
 //TYPES
@@ -18,6 +19,7 @@ export type Employee = {
   emergencyContactName?: string | null
   emergencyContactPhone?: string | null
   photoUrl?: string | null
+  cvUrl?: string | null // ✅ ADD
   dob: string
   doj: string
   gender: 'Male' | 'Female'
@@ -29,13 +31,14 @@ export type Employee = {
   departmentId: number
   designationId: number
   employeeTypeId: number
+  weekendIds: number[] // ✅ RENAME (better than weekends)
   createdBy: number
 }
 
 //CREATE
 export const createEmployee = (data: Employee) => {
   return db.transaction((tx) => {
-    // 1️⃣ INSERT (sync)
+    // 1️⃣ Insert employee
     const insertResult = tx
       .insert(employeeModel)
       .values({
@@ -48,6 +51,7 @@ export const createEmployee = (data: Employee) => {
         emergencyContactName: data.emergencyContactName ?? null,
         emergencyContactPhone: data.emergencyContactPhone ?? null,
         photoUrl: data.photoUrl ?? null,
+        cvUrl: data.cvUrl ?? null, // ✅ ADD
         dob: data.dob,
         doj: data.doj,
         gender: data.gender,
@@ -65,31 +69,37 @@ export const createEmployee = (data: Employee) => {
 
     const employeeId = Number(insertResult.lastInsertRowid)
 
-    // 2️⃣ SELECT (SYNC — THIS IS THE KEY)
-    const employee = tx
+    // 2️⃣ Insert employee weekends (BULK)
+    if (data.weekendIds?.length) {
+      tx.insert(employeeWeekendModel)
+        .values(
+          data.weekendIds.map((weekendId) => ({
+            employeeId,
+            weekendId,
+          }))
+        )
+        .run()
+    }
+
+    // 3️⃣ Return created employee
+    return tx
       .select()
       .from(employeeModel)
       .where(eq(employeeModel.employeeId, employeeId))
       .get()
-
-    // 3️⃣ RETURN PLAIN OBJECT (NOT Promise)
-    return employee
   })
 }
 
-//UPDATE
 export const updateEmployee = async (
   employeeId: number,
   data: Partial<Employee>
 ) => {
-  return await db.transaction(async (tx) => {
+  return db.transaction(async (tx) => {
     const existing = await tx.query.employeeModel.findFirst({
       where: eq(employeeModel.employeeId, employeeId),
     })
 
-    if (!existing) {
-      throw new Error('Employee not found')
-    }
+    if (!existing) throw new Error('Employee not found')
 
     await tx
       .update(employeeModel)
@@ -105,6 +115,7 @@ export const updateEmployee = async (
         emergencyContactPhone:
           data.emergencyContactPhone ?? existing.emergencyContactPhone,
         photoUrl: data.photoUrl ?? existing.photoUrl,
+        cvUrl: data.cvUrl ?? existing.cvUrl,
         dob: data.dob ?? existing.dob,
         doj: data.doj ?? existing.doj,
         gender: data.gender ?? existing.gender,
@@ -119,15 +130,31 @@ export const updateEmployee = async (
       })
       .where(eq(employeeModel.employeeId, employeeId))
 
-    return await tx.query.employeeModel.findFirst({
+    // 🔁 Update weekends
+    if (data.weekendIds) {
+      await tx
+        .delete(employeeWeekendModel)
+        .where(eq(employeeWeekendModel.employeeId, employeeId))
+
+      if (data.weekendIds.length) {
+        await tx.insert(employeeWeekendModel).values(
+          data.weekendIds.map((weekendId) => ({
+            employeeId,
+            weekendId,
+          }))
+        )
+      }
+    }
+
+    return tx.query.employeeModel.findFirst({
       where: eq(employeeModel.employeeId, employeeId),
     })
   })
 }
 
-//GET ALL
+//GET ALL EMPLOYEES
 export const getAllEmployees = async () => {
-  return await db
+  return db
     .select({
       employeeId: employeeModel.employeeId,
       fullName: employeeModel.fullName,
@@ -158,48 +185,25 @@ export const getAllEmployees = async () => {
     )
 }
 
-//GET ONE
+//GET EMPLOYEE BY ID (WITH WEEKENDS)
 export const getEmployeeById = async (employeeId: number) => {
   const employee = await db
-    .select({
-      employeeId: employeeModel.employeeId,
-      fullName: employeeModel.fullName,
-      email: employeeModel.email,
-      officialPhone: employeeModel.officialPhone,
-      personalPhone: employeeModel.personalPhone,
-      presentAddress: employeeModel.presentAddress,
-      permanentAddress: employeeModel.permanentAddress,
-      emergencyContactName: employeeModel.emergencyContactName,
-      emergencyContactPhone: employeeModel.emergencyContactPhone,
-      photoUrl: employeeModel.photoUrl,
-      dob: employeeModel.dob,
-      doj: employeeModel.doj,
-      gender: employeeModel.gender,
-      bloodGroup: employeeModel.bloodGroup,
-      basicSalary: employeeModel.basicSalary,
-      grossSalary: employeeModel.grossSalary,
-      isActive: employeeModel.isActive,
-      empCode: employeeModel.empCode,
-      departmentName: departmentModel.departmentName,
-      designationName: designationModel.designationName,
-      employeeTypeName: employeeTypeModel.employeeTypeName,
-    })
+    .select()
     .from(employeeModel)
-    .leftJoin(
-      departmentModel,
-      eq(employeeModel.departmentId, departmentModel.departmentId)
-    )
-    .leftJoin(
-      designationModel,
-      eq(employeeModel.designationId, designationModel.designationId)
-    )
-    .leftJoin(
-      employeeTypeModel,
-      eq(employeeModel.employeeTypeId, employeeTypeModel.employeeTypeId)
-    )
     .where(eq(employeeModel.employeeId, employeeId))
+    .get()
 
-  return employee.length ? employee[0] : null
+  if (!employee) return null
+
+  const weekends = await db
+    .select({ weekendId: employeeWeekendModel.weekendId })
+    .from(employeeWeekendModel)
+    .where(eq(employeeWeekendModel.employeeId, employeeId))
+
+  return {
+    ...employee,
+    weekendIds: weekends.map((w) => w.weekendId),
+  }
 }
 
 //DELETE

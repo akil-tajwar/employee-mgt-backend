@@ -15,6 +15,7 @@ router.post(
   '/create',
   upload.fields([
     { name: 'photoUrl', maxCount: 1 },
+    { name: 'cvUrl', maxCount: 1 },
   ]),
   authenticateUser,
   createEmployeeController
@@ -23,6 +24,7 @@ router.patch(
   '/edit/:id',
   upload.fields([
     { name: 'photoUrl', maxCount: 1 },
+    { name: 'cvUrl', maxCount: 1 },
   ]),
   authenticateUser,
   updateEmployeeController

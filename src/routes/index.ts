@@ -1,16 +1,20 @@
-import { Router } from "express";
-import authRoutes from "./auth.routes";
-import departmentsRoutes from "./departments.routes";
-import designationsRoutes from "./designations.routes";
-import employeeTypeRoutes from "./employeeTypes.routes";
-import employeeRoutes from "./employees.routes";
+import { Router } from 'express'
+import authRoutes from './auth.routes'
+import departmentsRoutes from './departments.routes'
+import designationsRoutes from './designations.routes'
+import employeeTypeRoutes from './employeeTypes.routes'
+import weekendRoutes from './weekends.routes'
+import employeeRoutes from './employees.routes'
+import holidayRoutes from './holidays.routes'
 
-const router=Router()
+const router = Router()
 
-router.use('/auth',authRoutes)
-router.use('/departments',departmentsRoutes)
-router.use('/designations',designationsRoutes)
-router.use('/employeeTypes',employeeTypeRoutes)
-router.use('/employees',employeeRoutes)
+router.use('/auth', authRoutes)
+router.use('/departments', departmentsRoutes)
+router.use('/designations', designationsRoutes)
+router.use('/employeeTypes', employeeTypeRoutes)
+router.use('/weekends', weekendRoutes)
+router.use('/employees', employeeRoutes)
+router.use('/holidays', holidayRoutes)
 
-export default router;
+export default router
