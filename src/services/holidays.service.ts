@@ -8,12 +8,19 @@ export const createHoliday = async (
   holidayData: Omit<NewHoliday, 'holidayId' | 'updatedAt' | 'updatedBy'>
 ) => {
   try {
-    const [newHoliday] = await db.insert(holidayModel).values({
-      ...holidayData,
-      createdAt: new Date().getTime(),
-    })
+    const result = await db
+      .insert(holidayModel)
+      .values({
+        ...holidayData,
+        createdAt: new Date().getTime(),
+      })
 
-    return newHoliday
+    // Return the inserted data with the generated ID
+    return {
+      ...holidayData,
+      holidayId: result.insertId, // or result[0].insertId depending on your ORM
+      createdAt: new Date().getTime(),
+    }
   } catch (error) {
     throw error
   }

@@ -13,7 +13,6 @@ import {
 // Schema validation
 const createHolidaySchema = createInsertSchema(holidayModel).omit({
   holidayId: true,
-  createdAt: true,
 })
 
 const editHolidaySchema = createHolidaySchema.partial()
@@ -24,8 +23,9 @@ export const createHolidayController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'create_bank_account')
+    requirePermission(req, 'create_holiday')
     const holidayData = createHolidaySchema.parse(req.body)
+    console.log("🚀 ~ createHolidayController ~ holidayData:", holidayData)
     const holiday = await createHoliday(holidayData)
 
     res.status(201).json({
@@ -43,7 +43,7 @@ export const getAllHolidaysController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'view_bank_account')
+    requirePermission(req, 'view_holiday')
     const holidays = await getAllHolidays()
 
     res.status(200).json(holidays)
@@ -58,7 +58,7 @@ export const getHolidayController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'view_bank_account')
+    requirePermission(req, 'view_holiday')
     const id = Number(req.params.id)
     const holiday = await getHolidayById(id)
 
@@ -74,7 +74,7 @@ export const editHolidayController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'edit_bank_account')
+    requirePermission(req, 'edit_holiday')
     const id = Number(req.params.id)
     const holidayData = editHolidaySchema.parse(req.body)
     const holiday = await editHoliday(id, holidayData)
@@ -87,7 +87,7 @@ export const editHolidayController = async (
 
 export const deleteHolidayController = async (req: Request, res: Response) => {
   try {
-    requirePermission(req, 'delete_bank_account')
+    requirePermission(req, 'delete_holiday')
     const holidayId = Number(req.params.id);
 
     const result = await deleteHoliday(holidayId);
