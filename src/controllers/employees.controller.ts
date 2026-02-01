@@ -14,15 +14,16 @@ import {
 export const createEmployeeController = async (req: Request, res: Response) => {
   try {
     requirePermission(req, 'create_employee')
+    console.log('FILES 👉', req.files)
+    console.log('BODY 👉', req.body)
 
-    console.log('🚀 ~ createEmployeeController ~ req.body:', req.body)
     const files = req.files as {
       [fieldname: string]: Express.Multer.File[]
     }
 
     const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`
 
-    // Support bulk & single
+    // Normalize payload
     const payload = Array.isArray(req.body) ? req.body : [req.body]
 
     const results = []
@@ -33,11 +34,18 @@ export const createEmployeeController = async (req: Request, res: Response) => {
           ? JSON.parse(item.employeeDetails)
           : item.employeeDetails
 
+      // 📸 Photo
       if (files?.photoUrl?.[0]) {
         employeeDetails.photoUrl = `${baseUrl}${files.photoUrl[0].filename}`
       }
 
-      const employee = createEmployee(employeeDetails)
+      // 📄 CV (PDF)
+      if (files?.cvUrl?.[0]) {
+        employeeDetails.cvUrl = `${baseUrl}${files.cvUrl[0].filename}`
+      }
+
+      // 🔁 Create employee (MUST await)
+      const employee = await createEmployee(employeeDetails)
       results.push(employee)
     }
 
@@ -75,8 +83,14 @@ export const updateEmployeeController = async (req: Request, res: Response) => {
 
     const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`
 
+    // 📸 Photo
     if (files?.photoUrl?.[0]) {
       employeeDetails.photoUrl = `${baseUrl}${files.photoUrl[0].filename}`
+    }
+
+    // 📄 CV
+    if (files?.cvUrl?.[0]) {
+      employeeDetails.cvUrl = `${baseUrl}${files.cvUrl[0].filename}`
     }
 
     const updatedEmployee = await updateEmployee(employeeId, employeeDetails)
@@ -84,12 +98,10 @@ export const updateEmployeeController = async (req: Request, res: Response) => {
     res.json({ success: true, data: updatedEmployee })
   } catch (error: any) {
     console.error('❌ Employee update error:', error)
-    if (!res.headersSent) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Internal server error',
-      })
-    }
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    })
   }
 }
 
