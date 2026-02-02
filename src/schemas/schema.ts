@@ -172,6 +172,7 @@ export const holidayModel = sqliteTable('holidays', {
 export const leaveTypeModel = sqliteTable('leave_types', {
   leaveTypeId: integer('leave_type_id').primaryKey({ autoIncrement: true }),
   leaveTypeName: text('leave_type_name').notNull(),
+  totalLeaves: integer('total_leaves').notNull(),
   createdBy: integer('created_by').notNull(),
   createdAt: integer('created_at').default(sql`(unixepoch())`),
   updatedBy: integer('updated_by'),
