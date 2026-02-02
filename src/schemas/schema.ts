@@ -143,6 +143,36 @@ export const weekendModel = sqliteTable(
   })
 )
 
+export const officeTimingModel = sqliteTable('office_timing', {
+  officeTimingId: integer('office_timing_id').primaryKey({
+    autoIncrement: true,
+  }),
+  startTime: text('start_time').notNull(),
+  endTime: text('end_time').notNull(),
+  createdBy: integer('created_by').notNull(),
+  createdAt: integer('created_at').default(sql`(unixepoch())`),
+  updatedBy: integer('updated_by'),
+  updatedAt: integer('updated_at'),
+})
+
+export const officeTimingWeekendsModel = sqliteTable('office_timing_weekends', {
+  officeTimingWeekendId: integer('office_timing_weekend_id').primaryKey({
+    autoIncrement: true,
+  }),
+  officeTimingId: integer('office_timing_id')
+    .notNull()
+    .references(() => officeTimingModel.officeTimingId, {
+      onDelete: 'cascade',
+    }),
+  weekendId: integer('weekend_id')
+    .notNull()
+    .references(() => weekendModel.weekendId, { onDelete: 'cascade' }),
+  createdBy: integer('created_by').notNull(),
+  createdAt: integer('created_at').default(sql`(unixepoch())`),
+  updatedBy: integer('updated_by'),
+  updatedAt: integer('updated_at'),
+})
+
 export const employeeWeekendModel = sqliteTable('employee_weekends', {
   employeeWeekendId: integer('employee_weekend_id').primaryKey({
     autoIncrement: true,
@@ -179,28 +209,27 @@ export const leaveTypeModel = sqliteTable('leave_types', {
   updatedAt: integer('updated_at'),
 })
 
-export const employeeLeaveModel = sqliteTable(
-  'employee_leaves',
-  {
-    employeeLeaveId: integer('employee_leave_id').primaryKey({
-      autoIncrement: true,
+export const employeeLeaveModel = sqliteTable('employee_leaves', {
+  employeeLeaveId: integer('employee_leave_id').primaryKey({
+    autoIncrement: true,
+  }),
+  employeeId: integer('employee_id')
+    .notNull()
+    .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
+  startDate: text('start_date').notNull(),
+  endDate: text('end_date').notNull(),
+  noOfDays: integer('no_of_days').notNull(),
+  leaveTypeId: integer('leave_type_id')
+    .notNull()
+    .references(() => leaveTypeModel.leaveTypeId, {
+      onDelete: 'cascade',
     }),
-    employeeId: integer('employee_id')
-      .notNull()
-      .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
-    startDate: text('start_date').notNull(),
-    endDate: text('end_date').notNull(),
-    noOfDays: integer('no_of_days').notNull(),
-    leaveTypeId: integer('leave_type_id').notNull().references(() => leaveTypeModel.leaveTypeId, {
-      onDelete: 'cascade'
-    }),
-    description: text('description'),
-    createdBy: integer('created_by').notNull(),
-    createdAt: integer('created_at').default(sql`(unixepoch())`),
-    updatedBy: integer('updated_by'),
-    updatedAt: integer('updated_at'),
-  }
-)
+  description: text('description'),
+  createdBy: integer('created_by').notNull(),
+  createdAt: integer('created_at').default(sql`(unixepoch())`),
+  updatedBy: integer('updated_by'),
+  updatedAt: integer('updated_at'),
+})
 
 // ========================
 // Relations
@@ -256,6 +285,20 @@ export const employeeRelations = relations(employeeModel, ({ one }) => ({
   }),
 }))
 
+export const officeTimingWeekendRelations = relations(
+  officeTimingWeekendsModel,
+  ({ one }) => ({
+    officeTiming: one(officeTimingModel, {
+      fields: [officeTimingWeekendsModel.officeTimingId],
+      references: [officeTimingModel.officeTimingId],
+    }),
+    weekend: one(weekendModel, {
+      fields: [officeTimingWeekendsModel.weekendId],
+      references: [weekendModel.weekendId],
+    }),
+  })
+)
+
 export const employeeWeekendRelations = relations(
   employeeWeekendModel,
   ({ one }) => ({
@@ -280,7 +323,7 @@ export const employeeLeaveRelations = relations(
     leaveType: one(leaveTypeModel, {
       fields: [employeeLeaveModel.leaveTypeId],
       references: [leaveTypeModel.leaveTypeId],
-    })
+    }),
   })
 )
 
