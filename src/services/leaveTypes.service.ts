@@ -3,8 +3,8 @@ import { leaveTypeModel } from '../schemas'
 import { eq } from 'drizzle-orm'
 
 // CREATE
-export const createLeaveType = async (leaveTypeName: string, createdBy: number) => {
-  const result = await db.insert(leaveTypeModel).values({ leaveTypeName, createdBy })
+export const createLeaveType = async (leaveTypeName: string, totalLeaves: number, createdBy: number) => {
+  const result = await db.insert(leaveTypeModel).values({ leaveTypeName, totalLeaves, createdBy })
 
   const leaveTypeId = Number(result.lastInsertRowid)
 
@@ -25,11 +25,12 @@ export const getLeaveTypes = async () => {
 export const updateLeaveType = async (
   leaveTypeId: number,
   leaveTypeName: string,
+  totalLeaves: number,
   updatedBy: number
 ) => {
   await db
     .update(leaveTypeModel)
-    .set({ leaveTypeName, updatedBy })
+    .set({ leaveTypeName, totalLeaves, updatedBy })
     .where(eq(leaveTypeModel.leaveTypeId, leaveTypeId))
 
   const [updated] = await db

@@ -5,7 +5,7 @@ import {
   departmentModel,
   designationModel,
   employeeTypeModel,
-  employeeWeekendModel,
+  employeeLeaveTypeModel,
 } from '../schemas'
 
 //TYPES
@@ -31,7 +31,8 @@ export type Employee = {
   departmentId: number
   designationId: number
   employeeTypeId: number
-  weekendIds: number[] // ✅ RENAME (better than weekends)
+  officeTimingId: number
+  leaveTypeIds: number[] // ✅ RENAME (better than weekends)
   createdBy: number
 }
 
@@ -63,19 +64,20 @@ export const createEmployee = (data: Employee) => {
         departmentId: data.departmentId,
         designationId: data.designationId,
         employeeTypeId: data.employeeTypeId,
+        officeTimingId: data.officeTimingId,
         createdBy: data.createdBy,
       })
       .run()
 
     const employeeId = Number(insertResult.lastInsertRowid)
 
-    // 2️⃣ Insert employee weekends (BULK)
-    if (data.weekendIds?.length) {
-      tx.insert(employeeWeekendModel)
+    // 2️⃣ Insert employee leave types (BULK)
+    if (data.leaveTypeIds?.length) {
+      tx.insert(employeeLeaveTypeModel)
         .values(
-          data.weekendIds.map((weekendId) => ({
+          data.leaveTypeIds.map((leaveTypeId) => ({
             employeeId,
-            weekendId,
+            leaveTypeId,
           }))
         )
         .run()
@@ -130,17 +132,17 @@ export const updateEmployee = async (
       })
       .where(eq(employeeModel.employeeId, employeeId))
 
-    // 🔁 Update weekends
-    if (data.weekendIds) {
+    // 🔁 Update leave types
+    if (data.leaveTypeIds) {
       await tx
-        .delete(employeeWeekendModel)
-        .where(eq(employeeWeekendModel.employeeId, employeeId))
+        .delete(employeeLeaveTypeModel)
+        .where(eq(employeeLeaveTypeModel.employeeId, employeeId))
 
-      if (data.weekendIds.length) {
-        await tx.insert(employeeWeekendModel).values(
-          data.weekendIds.map((weekendId) => ({
+      if (data.leaveTypeIds.length) {
+        await tx.insert(employeeLeaveTypeModel).values(
+          data.leaveTypeIds.map((leaveTypeId) => ({
             employeeId,
-            weekendId,
+            leaveTypeId,
           }))
         )
       }
@@ -196,13 +198,13 @@ export const getEmployeeById = async (employeeId: number) => {
   if (!employee) return null
 
   const weekends = await db
-    .select({ weekendId: employeeWeekendModel.weekendId })
-    .from(employeeWeekendModel)
-    .where(eq(employeeWeekendModel.employeeId, employeeId))
+    .select({ weekendId: employeeLeaveTypeModel.leaveTypeId })
+    .from(employeeLeaveTypeModel)
+    .where(eq(employeeLeaveTypeModel.employeeId, employeeId))
 
   return {
     ...employee,
-    weekendIds: weekends.map((w) => w.weekendId),
+    leaveTypeIds: weekends.map((w) => w.weekendId),
   }
 }
 

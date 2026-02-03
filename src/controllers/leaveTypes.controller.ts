@@ -15,8 +15,8 @@ export const createLeaveTypeController = async (
 
   try {
     requirePermission(req, 'create_leave_type')
-    const { leaveTypeName, createdBy } = req.body
-    const leaveType = await createLeaveType(leaveTypeName, createdBy)
+    const { leaveTypeName, totalLeaves, createdBy } = req.body
+    const leaveType = await createLeaveType(leaveTypeName, totalLeaves, createdBy)
     res.status(201).json({ status: 'success', data: leaveType })
   } catch (err) {
     next(err)
@@ -47,9 +47,9 @@ export const updateLeaveTypeController = async (
   try {
     requirePermission(req, 'edit_leave_type')
     const { leaveTypeId } = req.params
-    const { leaveTypeName, updatedBy } = req.body
+    const { leaveTypeName, totalLeaves, updatedBy } = req.body
 
-    const leaveType = await updateLeaveType(Number(leaveTypeId), leaveTypeName, updatedBy)
+    const leaveType = await updateLeaveType(Number(leaveTypeId), leaveTypeName, totalLeaves, updatedBy)
     res.json({ status: 'success', data: leaveType })
   } catch (err) {
     next(err)
