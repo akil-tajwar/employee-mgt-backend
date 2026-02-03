@@ -236,6 +236,22 @@ export const employeeLeaveModel = sqliteTable('employee_leaves', {
   updatedAt: integer('updated_at'),
 })
 
+export const employeeAttendanceModel = sqliteTable('employee_attendance', {
+  employeeAttendanceId: integer('employee_attendance_id').primaryKey({
+    autoIncrement: true,
+  }),
+  employeeId: integer('employee_id')
+    .notNull()
+    .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
+  attendaceDate: text('attendance_date').notNull(),
+  inTime: text('in_time').notNull(),
+  outTime: text('out_time').notNull(),
+  createdBy: integer('created_by').notNull(),
+  createdAt: integer('created_at').default(sql`(unixepoch())`),
+  updatedBy: integer('updated_by'),
+  updatedAt: integer('updated_at'),
+})
+
 // ========================
 // Relations
 // ========================
@@ -355,9 +371,13 @@ export type Employee = typeof employeeModel.$inferSelect
 export type NewEmployee = typeof employeeModel.$inferInsert
 export type Weekend = typeof weekendModel.$inferSelect
 export type NewWeekend = typeof weekendModel.$inferInsert
+export type OfficeTiming = typeof officeTimingModel.$inferSelect
+export type NewOfficeTiming = typeof officeTimingModel.$inferInsert
 export type Holiday = typeof holidayModel.$inferSelect
 export type NewHoliday = typeof holidayModel.$inferInsert
 export type LeaveType = typeof leaveTypeModel.$inferSelect
 export type NewLeaveType = typeof leaveTypeModel.$inferInsert
 export type EmployeeLeave = typeof employeeLeaveModel.$inferSelect
 export type NewEmployeeLeave = typeof employeeLeaveModel.$inferInsert
+export type EmployeeAttendance = typeof employeeAttendanceModel.$inferSelect
+export type NewEmployeeAttendance = typeof employeeAttendanceModel.$inferInsert
