@@ -23,7 +23,7 @@ export const createEmployeeAttendanceController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'create_employeeAttendance')
+    requirePermission(req, 'create_employee_attendance')
     const employeeAttendanceData = createEmployeeAttendanceSchema.parse(req.body)
     console.log("🚀 ~ createEmployeeAttendanceController ~ employeeAttendanceData:", employeeAttendanceData)
     const employeeAttendance = await createEmployeeAttendance(employeeAttendanceData)
@@ -43,7 +43,7 @@ export const getAllEmployeeAttendancesController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'view_employeeAttendance')
+    requirePermission(req, 'view_employee_attendance')
     const employeeAttendances = await getAllEmployeeAttendances()
 
     res.status(200).json(employeeAttendances)
@@ -58,7 +58,7 @@ export const getEmployeeAttendanceController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'view_employeeAttendance')
+    requirePermission(req, 'view_employee_attendance')
     const id = Number(req.params.id)
     const employeeAttendance = await getEmployeeAttendanceById(id)
 
@@ -74,7 +74,7 @@ export const editEmployeeAttendanceController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'edit_employeeAttendance')
+    requirePermission(req, 'edit_employee_attendance')
     const id = Number(req.params.id)
     const employeeAttendanceData = editEmployeeAttendanceSchema.parse(req.body)
     const employeeAttendance = await editEmployeeAttendance(id, employeeAttendanceData)
@@ -87,7 +87,7 @@ export const editEmployeeAttendanceController = async (
 
 export const deleteEmployeeAttendanceController = async (req: Request, res: Response) => {
   try {
-    requirePermission(req, 'delete_employeeAttendance')
+    requirePermission(req, 'delete_employee_attendance')
     const employeeAttendanceId = Number(req.params.id);
 
     const result = await deleteEmployeeAttendance(employeeAttendanceId);

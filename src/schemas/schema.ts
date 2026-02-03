@@ -236,7 +236,7 @@ export const employeeLeaveModel = sqliteTable('employee_leaves', {
   updatedAt: integer('updated_at'),
 })
 
-export const employeeAttendanceModel = sqliteTable('employee_attendance', {
+export const employeeAttendanceModel = sqliteTable('employee_attendances', {
   employeeAttendanceId: integer('employee_attendance_id').primaryKey({
     autoIncrement: true,
   }),
@@ -246,6 +246,8 @@ export const employeeAttendanceModel = sqliteTable('employee_attendance', {
   attendaceDate: text('attendance_date').notNull(),
   inTime: text('in_time').notNull(),
   outTime: text('out_time').notNull(),
+  lateInMinutes: integer('late_in_minutes').notNull().default(0),
+  earlyOutMinutes: integer('early_out_minutes').notNull().default(0),
   createdBy: integer('created_by').notNull(),
   createdAt: integer('created_at').default(sql`(unixepoch())`),
   updatedBy: integer('updated_by'),
@@ -344,6 +346,16 @@ export const employeeLeaveRelations = relations(
     leaveType: one(leaveTypeModel, {
       fields: [employeeLeaveModel.leaveTypeId],
       references: [leaveTypeModel.leaveTypeId],
+    }),
+  })
+)
+
+export const employeeAttendanceRelations = relations(
+  employeeAttendanceModel,
+  ({ one }) => ({
+    employee: one(employeeModel, {
+      fields: [employeeAttendanceModel.employeeId],
+      references: [employeeModel.employeeId],
     }),
   })
 )
