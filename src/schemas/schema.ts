@@ -112,6 +112,9 @@ export const employeeModel = sqliteTable(
     employeeTypeId: integer('employee_type_id')
       .references(() => employeeTypeModel.employeeTypeId)
       .notNull(),
+    officeTimingId: integer('office_timing_id')
+      .references(() => officeTimingModel.officeTimingId)
+      .notNull(),
     createdBy: integer('created_by').notNull(),
     createdAt: integer('created_at').default(sql`(unixepoch())`),
     updatedBy: integer('updated_by'),
@@ -173,19 +176,6 @@ export const officeTimingWeekendsModel = sqliteTable('office_timing_weekends', {
   updatedAt: integer('updated_at'),
 })
 
-export const employeeWeekendModel = sqliteTable('employee_weekends', {
-  employeeWeekendId: integer('employee_weekend_id').primaryKey({
-    autoIncrement: true,
-  }),
-  employeeId: integer('employee_id')
-    .notNull()
-    .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
-
-  weekendId: integer('weekend_id')
-    .notNull()
-    .references(() => weekendModel.weekendId, { onDelete: 'cascade' }),
-})
-
 export const holidayModel = sqliteTable('holidays', {
   holidayId: integer('holiday_id').primaryKey({ autoIncrement: true }),
   holidayName: text('holiday_name').notNull(),
@@ -209,6 +199,21 @@ export const leaveTypeModel = sqliteTable('leave_types', {
   updatedAt: integer('updated_at'),
 })
 
+//to track which leave types are assigned to which employees
+export const employeeLeaveTypeModel = sqliteTable('employee_leave_types', {
+  employeeLeaveTypeId: integer('employee_leave_type_id').primaryKey({
+    autoIncrement: true,
+  }),
+  employeeId: integer('employee_id')
+    .notNull()
+    .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
+
+  leaveTypeId: integer('leave_type_id')
+    .notNull()
+    .references(() => leaveTypeModel.leaveTypeId, { onDelete: 'cascade' }),
+})
+
+// to track leaves taken by employees
 export const employeeLeaveModel = sqliteTable('employee_leaves', {
   employeeLeaveId: integer('employee_leave_id').primaryKey({
     autoIncrement: true,
@@ -299,16 +304,16 @@ export const officeTimingWeekendRelations = relations(
   })
 )
 
-export const employeeWeekendRelations = relations(
-  employeeWeekendModel,
+export const employeeLeaveTypeRelations = relations(
+  employeeLeaveTypeModel,
   ({ one }) => ({
     employee: one(employeeModel, {
-      fields: [employeeWeekendModel.employeeId],
+      fields: [employeeLeaveTypeModel.employeeId],
       references: [employeeModel.employeeId],
     }),
-    weekend: one(weekendModel, {
-      fields: [employeeWeekendModel.weekendId],
-      references: [weekendModel.weekendId],
+    leaveType: one(leaveTypeModel, {
+      fields: [employeeLeaveTypeModel.leaveTypeId],
+      references: [leaveTypeModel.leaveTypeId],
     }),
   })
 )

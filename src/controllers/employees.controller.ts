@@ -116,7 +116,7 @@ export const getAllEmployeesController = async (
     requirePermission(req, 'view_employee')
 
     const data = await getAllEmployees()
-    res.json({ success: true, data })
+    res.json(data)
   } catch (error) {
     console.error('Get All Employees Error:', error)
     res.status(500).json({
