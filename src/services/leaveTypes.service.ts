@@ -1,21 +1,28 @@
 import { db } from '../config/database'
-import { leaveTypeModel } from '../schemas'
-import { eq } from 'drizzle-orm'
+import { leaveTypeModel, NewLeaveType } from '../schemas'
+import { eq, inArray } from 'drizzle-orm'
 
 // CREATE
-export const createLeaveType = async (leaveTypeName: string, totalLeaves: number, createdBy: number) => {
-  const result = await db.insert(leaveTypeModel).values({ leaveTypeName, totalLeaves, createdBy })
+export const createLeaveType = async (data: NewLeaveType | NewLeaveType[]) => {
+  // normalize to array
+  const values = Array.isArray(data) ? data : [data]
 
-  const leaveTypeId = Number(result.lastInsertRowid)
+  const result = await db.insert(leaveTypeModel).values(values)
 
-  const [leaveType] = await db
+  // SQLite specific
+  const lastId = Number(result.lastInsertRowid)
+  const firstId = lastId - values.length + 1
+
+  return await db
     .select()
     .from(leaveTypeModel)
-    .where(eq(leaveTypeModel.leaveTypeId, leaveTypeId))
-
-  return leaveType
+    .where(
+      inArray(
+        leaveTypeModel.leaveTypeId,
+        Array.from({ length: values.length }, (_, i) => firstId + i)
+      )
+    )
 }
-
 // READ ALL
 export const getLeaveTypes = async () => {
   return await db.select().from(leaveTypeModel)
@@ -24,13 +31,11 @@ export const getLeaveTypes = async () => {
 // UPDATE
 export const updateLeaveType = async (
   leaveTypeId: number,
-  leaveTypeName: string,
-  totalLeaves: number,
-  updatedBy: number
+  data: Partial<NewLeaveType>
 ) => {
   await db
     .update(leaveTypeModel)
-    .set({ leaveTypeName, totalLeaves, updatedBy })
+    .set(data)
     .where(eq(leaveTypeModel.leaveTypeId, leaveTypeId))
 
   const [updated] = await db

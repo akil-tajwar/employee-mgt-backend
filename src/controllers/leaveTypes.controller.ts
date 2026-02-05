@@ -12,12 +12,15 @@ export const createLeaveTypeController = async (
   res: Response,
   next: NextFunction
 ) => {
-
   try {
     requirePermission(req, 'create_leave_type')
-    const { leaveTypeName, totalLeaves, createdBy } = req.body
-    const leaveType = await createLeaveType(leaveTypeName, totalLeaves, createdBy)
-    res.status(201).json({ status: 'success', data: leaveType })
+
+    const leaveTypes = await createLeaveType(req.body)
+
+    res.status(201).json({
+      status: 'success',
+      data: leaveTypes,
+    })
   } catch (err) {
     next(err)
   }
@@ -28,7 +31,6 @@ export const getLeaveTypesController = async (
   res: Response,
   next: NextFunction
 ) => {
-
   try {
     requirePermission(req, 'view_leave_type')
     const leaveTypes = await getLeaveTypes()
@@ -43,14 +45,17 @@ export const updateLeaveTypeController = async (
   res: Response,
   next: NextFunction
 ) => {
-
   try {
     requirePermission(req, 'edit_leave_type')
-    const { leaveTypeId } = req.params
-    const { leaveTypeName, totalLeaves, updatedBy } = req.body
 
-    const leaveType = await updateLeaveType(Number(leaveTypeId), leaveTypeName, totalLeaves, updatedBy)
-    res.json({ status: 'success', data: leaveType })
+    const { leaveTypeId } = req.params
+
+    const leaveType = await updateLeaveType(Number(leaveTypeId), req.body)
+
+    res.json({
+      status: 'success',
+      data: leaveType,
+    })
   } catch (err) {
     next(err)
   }
@@ -61,7 +66,6 @@ export const deleteLeaveTypeController = async (
   res: Response,
   next: NextFunction
 ) => {
-
   try {
     requirePermission(req, 'delete_leave_type')
     const { leaveTypeId } = req.params
