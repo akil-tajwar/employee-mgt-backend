@@ -193,6 +193,7 @@ export const leaveTypeModel = sqliteTable('leave_types', {
   leaveTypeId: integer('leave_type_id').primaryKey({ autoIncrement: true }),
   leaveTypeName: text('leave_type_name').notNull(),
   totalLeaves: integer('total_leaves').notNull(),
+  yearPeriod: integer('year_period').notNull(),
   createdBy: integer('created_by').notNull(),
   createdAt: integer('created_at').default(sql`(unixepoch())`),
   updatedBy: integer('updated_by'),
@@ -243,7 +244,7 @@ export const employeeAttendanceModel = sqliteTable('employee_attendances', {
   employeeId: integer('employee_id')
     .notNull()
     .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
-  attendaceDate: text('attendance_date').notNull(),
+  attendanceDate: text('attendance_date').notNull(),
   inTime: text('in_time').notNull(),
   outTime: text('out_time').notNull(),
   lateInMinutes: integer('late_in_minutes').notNull().default(0),
