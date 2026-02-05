@@ -9,6 +9,7 @@ import {
   getAllEmployeeAttendances,
   getEmployeeAttendanceById,
 } from '../services/employeeAttendances.service'
+import { BadRequestError } from '../services/utils/errors.utils'
 
 // Schema validation
 const createEmployeeAttendanceSchema = createInsertSchema(employeeAttendanceModel).omit({
@@ -24,9 +25,14 @@ export const createEmployeeAttendanceController = async (
 ) => {
   try {
     requirePermission(req, 'create_employee_attendance')
-    const employeeAttendanceData = createEmployeeAttendanceSchema.parse(req.body)
-    console.log("🚀 ~ createEmployeeAttendanceController ~ employeeAttendanceData:", employeeAttendanceData)
-    const employeeAttendance = await createEmployeeAttendance(employeeAttendanceData)
+
+    const payload = req.body
+
+    if (!payload || (Array.isArray(payload) && payload.length === 0)) {
+      throw BadRequestError('Request body cannot be empty')
+    }
+
+    const employeeAttendance = await createEmployeeAttendance(payload)
 
     res.status(201).json({
       status: 'success',
@@ -36,6 +42,37 @@ export const createEmployeeAttendanceController = async (
     next(error)
   }
 }
+
+
+
+export const editEmployeeAttendanceController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    requirePermission(req, 'edit_employee_attendance')
+
+    const employeeAttendanceId = Number(req.params.id)
+
+    if (!employeeAttendanceId) {
+      throw BadRequestError('Invalid employeeAttendanceId')
+    }
+
+    const employeeAttendance = await editEmployeeAttendance(
+      employeeAttendanceId,
+      req.body
+    )
+
+    res.status(200).json({
+      status: 'success',
+      data: employeeAttendance,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 
 export const getAllEmployeeAttendancesController = async (
   req: Request,
@@ -61,23 +98,6 @@ export const getEmployeeAttendanceController = async (
     requirePermission(req, 'view_employee_attendance')
     const id = Number(req.params.id)
     const employeeAttendance = await getEmployeeAttendanceById(id)
-
-    res.status(200).json(employeeAttendance)
-  } catch (error) {
-    next(error)
-  }
-}
-
-export const editEmployeeAttendanceController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    requirePermission(req, 'edit_employee_attendance')
-    const id = Number(req.params.id)
-    const employeeAttendanceData = editEmployeeAttendanceSchema.parse(req.body)
-    const employeeAttendance = await editEmployeeAttendance(id, employeeAttendanceData)
 
     res.status(200).json(employeeAttendance)
   } catch (error) {
