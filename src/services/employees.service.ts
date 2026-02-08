@@ -6,6 +6,7 @@ import {
   designationModel,
   employeeTypeModel,
   employeeLeaveTypeModel,
+  NewEmployeeLeaveType,
 } from '../schemas'
 
 //TYPES
@@ -230,6 +231,83 @@ export const deleteEmployee = async (employeeId: number) => {
     return {
       message: 'Employee deleted successfully',
       deletedEmployee: existing,
+    }
+  })
+}
+
+// ASSIGN LEAVE TYPES TO EMPLOYEES
+type AssignLeaveTypeGrouped = {
+  employeeId: number
+  leaveTypeIds: number[]
+}
+
+type AssignLeaveTypeFlat = {
+  employeeId: number
+  leaveTypeId: number
+}
+
+export const assignLeaveType = async (
+  payload:
+    | AssignLeaveTypeGrouped
+    | AssignLeaveTypeFlat
+    | AssignLeaveTypeGrouped[]
+    | AssignLeaveTypeFlat[]
+) => {
+  const data = Array.isArray(payload) ? payload : [payload]
+
+  console.log('🚀 ~ assignLeaveType ~ raw data:', data)
+
+  return db.transaction((tx) => {
+    const groupedByEmployee = new Map<number, Set<number>>()
+
+    for (const item of data) {
+      const { employeeId } = item
+      if (!employeeId) continue
+
+      if (!groupedByEmployee.has(employeeId)) {
+        groupedByEmployee.set(employeeId, new Set())
+      }
+
+      const bucket = groupedByEmployee.get(employeeId)!
+
+      // 🟢 Grouped payload
+      if ('leaveTypeIds' in item && Array.isArray(item.leaveTypeIds)) {
+        item.leaveTypeIds
+          .filter((id): id is number => Number.isInteger(id))
+          .forEach((id) => bucket.add(id))
+      }
+
+      // 🟢 Flat payload
+      if ('leaveTypeId' in item && Number.isInteger(item.leaveTypeId)) {
+        bucket.add(item.leaveTypeId)
+      }
+    }
+
+    // Process each employee
+    for (const [employeeId, leaveTypeSet] of groupedByEmployee) {
+      const leaveTypeIds = Array.from(leaveTypeSet)
+
+      // 1️⃣ Delete old assignments
+      tx.delete(employeeLeaveTypeModel)
+        .where(eq(employeeLeaveTypeModel.employeeId, employeeId))
+        .run()
+
+      // 2️⃣ Insert new ones
+      if (leaveTypeIds.length) {
+        tx.insert(employeeLeaveTypeModel)
+          .values(
+            leaveTypeIds.map((leaveTypeId) => ({
+              employeeId,
+              leaveTypeId,
+            }))
+          )
+          .run()
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Leave types assigned successfully',
     }
   })
 }
