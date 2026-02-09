@@ -93,19 +93,20 @@ export const createEmployee = (data: Employee) => {
   })
 }
 
-export const updateEmployee = async (
-  employeeId: number,
-  data: Partial<Employee>
-) => {
-  return db.transaction(async (tx) => {
-    const existing = await tx.query.employeeModel.findFirst({
-      where: eq(employeeModel.employeeId, employeeId),
-    })
+export const updateEmployee = (employeeId: number, data: Partial<Employee>) => {
+  console.log('🚀 ~ updateEmployee ~ data:', data)
+
+  return db.transaction((tx) => {
+    const existing = tx.query.employeeModel
+      .findFirst({
+        where: eq(employeeModel.employeeId, employeeId),
+      })
+      .sync()
 
     if (!existing) throw new Error('Employee not found')
 
-    await tx
-      .update(employeeModel)
+    // ✅ EXECUTE UPDATE
+    tx.update(employeeModel)
       .set({
         fullName: data.fullName ?? existing.fullName,
         email: data.email ?? existing.email,
@@ -132,26 +133,32 @@ export const updateEmployee = async (
         employeeTypeId: data.employeeTypeId ?? existing.employeeTypeId,
       })
       .where(eq(employeeModel.employeeId, employeeId))
+      .run() // 🔥 THIS WAS MISSING
 
     // 🔁 Update leave types
     if (data.leaveTypeIds) {
-      await tx
-        .delete(employeeLeaveTypeModel)
+      tx.delete(employeeLeaveTypeModel)
         .where(eq(employeeLeaveTypeModel.employeeId, employeeId))
+        .run()
 
       if (data.leaveTypeIds.length) {
-        await tx.insert(employeeLeaveTypeModel).values(
-          data.leaveTypeIds.map((leaveTypeId) => ({
-            employeeId,
-            leaveTypeId,
-          }))
-        )
+        tx.insert(employeeLeaveTypeModel)
+          .values(
+            data.leaveTypeIds.map((leaveTypeId) => ({
+              employeeId,
+              leaveTypeId,
+            }))
+          )
+          .run()
       }
     }
 
-    return tx.query.employeeModel.findFirst({
-      where: eq(employeeModel.employeeId, employeeId),
-    })
+    // ✅ Return updated employee
+    return tx.query.employeeModel
+      .findFirst({
+        where: eq(employeeModel.employeeId, employeeId),
+      })
+      .sync()
   })
 }
 

@@ -75,14 +75,17 @@ export const updateEmployeeController = async (req: Request, res: Response) => {
       res.status(400).json({ error: 'Invalid employee ID' })
     }
 
-    const employeeDetails =
-      typeof req.body === 'string' ? JSON.parse(req.body) : req.body
-
     const files = req.files as {
       [fieldname: string]: Express.Multer.File[]
     }
 
     const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`
+
+    // ✅ Parse employeeDetails EXACTLY like create
+    const employeeDetails =
+      typeof req.body.employeeDetails === 'string'
+        ? JSON.parse(req.body.employeeDetails)
+        : req.body.employeeDetails
 
     // 📸 Photo
     if (files?.photoUrl?.[0]) {
@@ -94,7 +97,7 @@ export const updateEmployeeController = async (req: Request, res: Response) => {
       employeeDetails.cvUrl = `${baseUrl}${files.cvUrl[0].filename}`
     }
 
-    const updatedEmployee = await updateEmployee(employeeId, employeeDetails)
+    const updatedEmployee = updateEmployee(employeeId, employeeDetails)
 
     res.json({ success: true, data: updatedEmployee })
   } catch (error: any) {
@@ -105,6 +108,7 @@ export const updateEmployeeController = async (req: Request, res: Response) => {
     })
   }
 }
+
 
 /* ================================
    GET ALL EMPLOYEES
@@ -148,7 +152,7 @@ export const getEmployeeByIdController = async (
       res.status(404).json({ success: false, message: 'Employee not found' })
     }
 
-    res.json({ success: true, data })
+    res.json(data)
   } catch (error) {
     console.error('Get Employee By ID Error:', error)
     res.status(500).json({
