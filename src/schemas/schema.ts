@@ -1,3 +1,4 @@
+import { table } from 'console'
 import { relations, sql } from 'drizzle-orm'
 import {
   sqliteTable,
@@ -255,6 +256,89 @@ export const employeeAttendanceModel = sqliteTable('employee_attendances', {
   updatedAt: integer('updated_at'),
 })
 
+export const otherSalaryComponentsModel = sqliteTable(
+  'other_salary_components',
+  {
+    otherSalaryComponentId: integer('other_salary_component_id').primaryKey({
+      autoIncrement: true,
+    }),
+    componentName: text('component_name').notNull(),
+    componentType: text('component_type').notNull(), // e.g., 'Allowance', 'Deduction'
+    status: integer('status').notNull().default(1), // 1 for active, 0 for inactive
+    createdBy: integer('created_by').notNull(),
+    createdAt: integer('created_at').default(sql`(unixepoch())`),
+    updatedBy: integer('updated_by'),
+    updatedAt: integer('updated_at'),
+  },
+  (table) => ({
+    componentTypeCheck: check(
+      'component_type_check',
+      sql`${table.componentType} in ('Allowance', 'Deduction')`
+    ),
+  })
+)
+
+export const employeeOtherSalaryComponentsModel = sqliteTable(
+  'employee_other_salary_components',
+  {
+    employeeOtherSalaryComponentId: integer(
+      'employee_other_salary_component_id'
+    ).primaryKey({
+      autoIncrement: true,
+    }),
+    employeeId: integer('employee_id')
+      .notNull()
+      .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
+    otherSalaryComponentId: integer('other_salary_component_id')
+      .notNull()
+      .references(() => otherSalaryComponentsModel.otherSalaryComponentId, {
+        onDelete: 'cascade',
+      }),
+    salaryMonth: text('salary_month').notNull(), // e.g., 'January', 'February', etc.
+    salaryYear: integer('salary_year').notNull(), // e.g., 2024
+    amount: real('amount').notNull(),
+    createdBy: integer('created_by').notNull(),
+    createdAt: integer('created_at').default(sql`(unixepoch())`),
+    updatedBy: integer('updated_by'),
+    updatedAt: integer('updated_at'),
+  },
+  (table) => ({
+    salaryMonthCheck: check(
+      'salary_month_check',
+      sql`${table.salaryMonth} in ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')`
+    ),
+  })
+)
+
+export const salaryModel = sqliteTable('salaries', {
+  salaryId: integer('salary_id').primaryKey({ autoIncrement: true }),
+  salaryMonth: text('salary_month').notNull(),
+  salaryYear: integer('salary_year').notNull(),
+  employeeId: integer('employee_id')
+    .notNull()
+    .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
+  departmentId: integer('department_id')
+    .references(() => departmentModel.departmentId, { onDelete: 'cascade' })
+    .notNull(),
+  designationId: integer('designation_id')
+    .references(() => designationModel.designationId, { onDelete: 'cascade' })
+    .notNull(),
+  basicSalary: real('basic_salary').notNull(),
+  grossSalary: real('gross_salary').notNull(),
+  netSalary: real('net_salary').notNull(),
+  doj: text('doj').notNull(),
+  employeeOtherSalaryComponentId: integer('employee_other_salary_component_id')
+    .notNull()
+    .references(
+      () => employeeOtherSalaryComponentsModel.employeeOtherSalaryComponentId,
+      { onDelete: 'cascade' }
+    ),
+  createdBy: integer('created_by').notNull(),
+  createdAt: integer('created_at').default(sql`(unixepoch())`),
+  updatedBy: integer('updated_by'),
+  updatedAt: integer('updated_at'),
+})
+
 // ========================
 // Relations
 // ========================
@@ -361,6 +445,41 @@ export const employeeAttendanceRelations = relations(
   })
 )
 
+export const employeeOtherSalaryComponentsRelations = relations(
+  employeeOtherSalaryComponentsModel,
+  ({ one }) => ({
+    employee: one(employeeModel, {
+      fields: [employeeOtherSalaryComponentsModel.employeeId],
+      references: [employeeModel.employeeId],
+    }),
+    otherSalaryComponent: one(otherSalaryComponentsModel, {
+      fields: [employeeOtherSalaryComponentsModel.otherSalaryComponentId],
+      references: [otherSalaryComponentsModel.otherSalaryComponentId],
+    }),
+  })
+)
+
+export const salaryRelations = relations(salaryModel, ({ one }) => ({
+  employee: one(employeeModel, {
+    fields: [salaryModel.employeeId],
+    references: [employeeModel.employeeId],
+  }),
+  department: one(departmentModel, {
+    fields: [salaryModel.departmentId],
+    references: [departmentModel.departmentId],
+  }),
+  designation: one(designationModel, {
+    fields: [salaryModel.designationId],
+    references: [designationModel.designationId],
+  }),
+  employeeOtherSalaryComponent: one(employeeOtherSalaryComponentsModel, {
+    fields: [salaryModel.employeeOtherSalaryComponentId],
+    references: [
+      employeeOtherSalaryComponentsModel.employeeOtherSalaryComponentId,
+    ],
+  }),
+}))
+
 // ========================
 // Types
 // ========================
@@ -396,3 +515,9 @@ export type EmployeeLeave = typeof employeeLeaveModel.$inferSelect
 export type NewEmployeeLeave = typeof employeeLeaveModel.$inferInsert
 export type EmployeeAttendance = typeof employeeAttendanceModel.$inferSelect
 export type NewEmployeeAttendance = typeof employeeAttendanceModel.$inferInsert
+export type OtherSalaryComponent = typeof otherSalaryComponentsModel.$inferSelect
+export type NewOtherSalaryComponent = typeof otherSalaryComponentsModel.$inferInsert
+export type EmployeeOtherSalaryComponent = typeof employeeOtherSalaryComponentsModel.$inferSelect
+export type NewEmployeeOtherSalaryComponent = typeof employeeOtherSalaryComponentsModel.$inferInsert
+export type Salary = typeof salaryModel.$inferSelect
+export type NewSalary = typeof salaryModel.$inferInsert
