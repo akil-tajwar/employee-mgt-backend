@@ -23,7 +23,7 @@ export const createOtherSalaryComponentController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'create_otherSalaryComponent')
+    requirePermission(req, 'create_other_salary_component')
     const otherSalaryComponentData = createOtherSalaryComponentSchema.parse(req.body)
     console.log("🚀 ~ createOtherSalaryComponentController ~ otherSalaryComponentData:", otherSalaryComponentData)
     const otherSalaryComponent = await createOtherSalaryComponent(otherSalaryComponentData)
@@ -43,7 +43,7 @@ export const getAllOtherSalaryComponentsController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'view_otherSalaryComponent')
+    requirePermission(req, 'view_other_salary_component')
     const otherSalaryComponents = await getAllOtherSalaryComponents()
 
     res.status(200).json(otherSalaryComponents)
@@ -58,7 +58,7 @@ export const getOtherSalaryComponentController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'view_otherSalaryComponent')
+    requirePermission(req, 'view_other_salary_component')
     const id = Number(req.params.id)
     const otherSalaryComponent = await getOtherSalaryComponentById(id)
 
@@ -74,7 +74,7 @@ export const editOtherSalaryComponentController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'edit_otherSalaryComponent')
+    requirePermission(req, 'edit_other_salary_component')
     const id = Number(req.params.id)
     const otherSalaryComponentData = editOtherSalaryComponentSchema.parse(req.body)
     const otherSalaryComponent = await editOtherSalaryComponent(id, otherSalaryComponentData)
@@ -87,7 +87,7 @@ export const editOtherSalaryComponentController = async (
 
 export const deleteOtherSalaryComponentController = async (req: Request, res: Response) => {
   try {
-    requirePermission(req, 'delete_otherSalaryComponent')
+    requirePermission(req, 'delete_other_salary_component')
     const otherSalaryComponentId = Number(req.params.id);
 
     const result = await deleteOtherSalaryComponent(otherSalaryComponentId);

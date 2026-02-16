@@ -9,6 +9,8 @@ import officeTimingRoutes from './officeTimings.routes'
 import holidayRoutes from './holidays.routes'
 import leaveTypeRoutes from './leaveTypes.routes'
 import employeeAttendanceRoutes from './employeeAttendances.routes'
+import otherSalaryComponentsRoutes from './otherSalaryComponents.routes'
+import employeeOtherSalaryComponentsRoutes from './employeeOtherSalaryComponents.routes'
 
 const router = Router()
 
@@ -22,5 +24,7 @@ router.use('/officeTimings', officeTimingRoutes)
 router.use('/holidays', holidayRoutes)
 router.use('/leaveTypes', leaveTypeRoutes)
 router.use('/employeeAttendances', employeeAttendanceRoutes)
+router.use('/otherSalaryComponents', otherSalaryComponentsRoutes)
+router.use('/employeeOtherSalaryComponents', employeeOtherSalaryComponentsRoutes)
 
 export default router
