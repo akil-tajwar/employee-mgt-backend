@@ -32,6 +32,28 @@ export const createEmployeeOtherSalaryComponent = async (
   }
 }
 
+// Update
+export const editEmployeeOtherSalaryComponent = async (
+  employeeOtherSalaryComponentId: number,
+  employeeOtherSalaryComponentData: Partial<NewEmployeeOtherSalaryComponent>
+) => {
+  const [updatedEmployeeOtherSalaryComponent] = await db
+    .update(employeeOtherSalaryComponentsModel)
+    .set(employeeOtherSalaryComponentData)
+    .where(
+      eq(
+        employeeOtherSalaryComponentsModel.employeeOtherSalaryComponentId,
+        employeeOtherSalaryComponentId
+      )
+    )
+
+  if (!updatedEmployeeOtherSalaryComponent) {
+    throw BadRequestError('Cloth employeeOtherSalaryComponent not found')
+  }
+
+  return updatedEmployeeOtherSalaryComponent
+}
+
 // Get All
 export const getAllEmployeeOtherSalaryComponents = async () => {
   return await db
@@ -91,28 +113,6 @@ export const getEmployeeOtherSalaryComponentById = async (
   }
 
   return employeeOtherSalaryComponent[0]
-}
-
-// Update
-export const editEmployeeOtherSalaryComponent = async (
-  employeeOtherSalaryComponentId: number,
-  employeeOtherSalaryComponentData: Partial<NewEmployeeOtherSalaryComponent>
-) => {
-  const [updatedEmployeeOtherSalaryComponent] = await db
-    .update(employeeOtherSalaryComponentsModel)
-    .set(employeeOtherSalaryComponentData)
-    .where(
-      eq(
-        employeeOtherSalaryComponentsModel.employeeOtherSalaryComponentId,
-        employeeOtherSalaryComponentId
-      )
-    )
-
-  if (!updatedEmployeeOtherSalaryComponent) {
-    throw BadRequestError('Cloth employeeOtherSalaryComponent not found')
-  }
-
-  return updatedEmployeeOtherSalaryComponent
 }
 
 // Delete

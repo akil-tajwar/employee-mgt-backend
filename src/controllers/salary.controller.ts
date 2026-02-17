@@ -13,7 +13,7 @@ export const createSalaryController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'create_leave_type')
+    requirePermission(req, 'create_salary')
 
     const salarys = await createSalary(req.body)
 
@@ -32,7 +32,7 @@ export const getSalarysController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'view_leave_type')
+    requirePermission(req, 'view_salary')
     const salarys = await getSalarys()
     res.json(salarys)
   } catch (err) {
@@ -46,7 +46,7 @@ export const updateSalaryController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'edit_leave_type')
+    requirePermission(req, 'edit_salary')
 
     const { salaryId } = req.params
 
@@ -67,7 +67,7 @@ export const deleteSalaryController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'delete_leave_type')
+    requirePermission(req, 'delete_salary')
     const { salaryId } = req.params
     await deleteSalary(Number(salaryId))
     res.json({ status: 'success', message: 'Leave type deleted' })
