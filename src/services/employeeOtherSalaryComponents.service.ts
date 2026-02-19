@@ -10,22 +10,24 @@ import { BadRequestError } from './utils/errors.utils'
 
 // Create
 export const createEmployeeOtherSalaryComponent = async (
-  employeeOtherSalaryComponentData: Omit<
+  data: Omit<
     NewEmployeeOtherSalaryComponent,
     'employeeOtherSalaryComponentId' | 'updatedAt' | 'updatedBy'
-  >
+  >[]
 ) => {
   try {
-    const result = await db.insert(employeeOtherSalaryComponentsModel).values({
-      ...employeeOtherSalaryComponentData,
-      createdAt: new Date().getTime(),
-    })
+    const now = Date.now()
 
-    // Return the inserted data with the generated ID
+    const values = data.map((item) => ({
+      ...item,
+      createdAt: now,
+    }))
+
+    await db.insert(employeeOtherSalaryComponentsModel).values(values)
+
     return {
-      ...employeeOtherSalaryComponentData,
-      employeeOtherSalaryComponentId: result.insertId, // or result[0].insertId depending on your ORM
-      createdAt: new Date().getTime(),
+      insertedCount: values.length,
+      data: values,
     }
   } catch (error) {
     throw error

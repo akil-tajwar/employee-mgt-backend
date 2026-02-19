@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import {
-  createSalary,
+  createSalaryWithOtherSalaryComponents,
   getSalarys,
   updateSalary,
   deleteSalary,
@@ -15,11 +15,11 @@ export const createSalaryController = async (
   try {
     requirePermission(req, 'create_salary')
 
-    const salarys = await createSalary(req.body)
+    const result = await createSalaryWithOtherSalaryComponents(req.body)
 
     res.status(201).json({
       status: 'success',
-      data: salarys,
+      data: result,
     })
   } catch (err) {
     next(err)

@@ -310,34 +310,37 @@ export const employeeOtherSalaryComponentsModel = sqliteTable(
   })
 )
 
-export const salaryModel = sqliteTable('salaries', {
-  salaryId: integer('salary_id').primaryKey({ autoIncrement: true }),
-  salaryMonth: text('salary_month').notNull(),
-  salaryYear: integer('salary_year').notNull(),
-  employeeId: integer('employee_id')
-    .notNull()
-    .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
-  departmentId: integer('department_id')
-    .references(() => departmentModel.departmentId, { onDelete: 'cascade' })
-    .notNull(),
-  designationId: integer('designation_id')
-    .references(() => designationModel.designationId, { onDelete: 'cascade' })
-    .notNull(),
-  basicSalary: real('basic_salary').notNull(),
-  grossSalary: real('gross_salary').notNull(),
-  netSalary: real('net_salary').notNull(),
-  doj: text('doj').notNull(),
-  employeeOtherSalaryComponentId: integer('employee_other_salary_component_id')
-    .notNull()
-    .references(
-      () => employeeOtherSalaryComponentsModel.employeeOtherSalaryComponentId,
-      { onDelete: 'cascade' }
+export const salaryModel = sqliteTable(
+  'salaries',
+  {
+    salaryId: integer('salary_id').primaryKey({ autoIncrement: true }),
+    salaryMonth: text('salary_month').notNull(),
+    salaryYear: integer('salary_year').notNull(),
+    employeeId: integer('employee_id')
+      .notNull()
+      .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
+    departmentId: integer('department_id')
+      .references(() => departmentModel.departmentId, { onDelete: 'cascade' })
+      .notNull(),
+    designationId: integer('designation_id')
+      .references(() => designationModel.designationId, { onDelete: 'cascade' })
+      .notNull(),
+    basicSalary: real('basic_salary').notNull(),
+    grossSalary: real('gross_salary').notNull(),
+    netSalary: real('net_salary').notNull(),
+    doj: text('doj').notNull(),
+    createdBy: integer('created_by').notNull(),
+    createdAt: integer('created_at').default(sql`(unixepoch())`),
+    updatedBy: integer('updated_by'),
+    updatedAt: integer('updated_at'),
+  },
+  (table) => ({
+    salaryMonthCheck: check(
+      'salary_month_check',
+      sql`${table.salaryMonth} in ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')`
     ),
-  createdBy: integer('created_by').notNull(),
-  createdAt: integer('created_at').default(sql`(unixepoch())`),
-  updatedBy: integer('updated_by'),
-  updatedAt: integer('updated_at'),
-})
+  })
+)
 
 // ========================
 // Relations
@@ -472,12 +475,6 @@ export const salaryRelations = relations(salaryModel, ({ one }) => ({
     fields: [salaryModel.designationId],
     references: [designationModel.designationId],
   }),
-  employeeOtherSalaryComponent: one(employeeOtherSalaryComponentsModel, {
-    fields: [salaryModel.employeeOtherSalaryComponentId],
-    references: [
-      employeeOtherSalaryComponentsModel.employeeOtherSalaryComponentId,
-    ],
-  }),
 }))
 
 // ========================
@@ -515,9 +512,13 @@ export type EmployeeLeave = typeof employeeLeaveModel.$inferSelect
 export type NewEmployeeLeave = typeof employeeLeaveModel.$inferInsert
 export type EmployeeAttendance = typeof employeeAttendanceModel.$inferSelect
 export type NewEmployeeAttendance = typeof employeeAttendanceModel.$inferInsert
-export type OtherSalaryComponent = typeof otherSalaryComponentsModel.$inferSelect
-export type NewOtherSalaryComponent = typeof otherSalaryComponentsModel.$inferInsert
-export type EmployeeOtherSalaryComponent = typeof employeeOtherSalaryComponentsModel.$inferSelect
-export type NewEmployeeOtherSalaryComponent = typeof employeeOtherSalaryComponentsModel.$inferInsert
+export type OtherSalaryComponent =
+  typeof otherSalaryComponentsModel.$inferSelect
+export type NewOtherSalaryComponent =
+  typeof otherSalaryComponentsModel.$inferInsert
+export type EmployeeOtherSalaryComponent =
+  typeof employeeOtherSalaryComponentsModel.$inferSelect
+export type NewEmployeeOtherSalaryComponent =
+  typeof employeeOtherSalaryComponentsModel.$inferInsert
 export type Salary = typeof salaryModel.$inferSelect
 export type NewSalary = typeof salaryModel.$inferInsert
