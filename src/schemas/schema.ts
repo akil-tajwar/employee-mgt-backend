@@ -311,7 +311,7 @@ export const employeeOtherSalaryComponentsModel = sqliteTable(
 )
 
 export const salaryModel = sqliteTable(
-  'salaries',
+  'salary',
   {
     salaryId: integer('salary_id').primaryKey({ autoIncrement: true }),
     salaryMonth: text('salary_month').notNull(),

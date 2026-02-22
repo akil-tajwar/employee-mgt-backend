@@ -2,8 +2,8 @@ import { Request, Response, NextFunction } from 'express'
 import {
   createSalaryWithOtherSalaryComponents,
   getSalarys,
-  updateSalary,
-  deleteSalary,
+  updateSalaryWithOtherSalaryComponents,
+  deleteSalaryWithOtherSalaryComponents,
 } from '../services/salary.service'
 import { requirePermission } from '../services/utils/jwt.utils'
 
@@ -50,11 +50,14 @@ export const updateSalaryController = async (
 
     const { salaryId } = req.params
 
-    const salary = await updateSalary(Number(salaryId), req.body)
+    const result = await updateSalaryWithOtherSalaryComponents(
+      Number(salaryId),
+      req.body
+    )
 
     res.json({
       status: 'success',
-      data: salary,
+      data: result,
     })
   } catch (err) {
     next(err)
@@ -68,9 +71,15 @@ export const deleteSalaryController = async (
 ) => {
   try {
     requirePermission(req, 'delete_salary')
+
     const { salaryId } = req.params
-    await deleteSalary(Number(salaryId))
-    res.json({ status: 'success', message: 'Leave type deleted' })
+
+    await deleteSalaryWithOtherSalaryComponents(Number(salaryId))
+
+    res.json({
+      status: 'success',
+      message: 'Salary deleted successfully',
+    })
   } catch (err) {
     next(err)
   }

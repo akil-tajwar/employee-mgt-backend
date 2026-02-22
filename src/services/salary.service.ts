@@ -7,6 +7,7 @@ import {
   designationModel,
   employeeOtherSalaryComponentsModel,
   NewEmployeeOtherSalaryComponent,
+  otherSalaryComponentsModel,
 } from '../schemas'
 import { and, eq, inArray } from 'drizzle-orm'
 
@@ -87,6 +88,8 @@ export const getSalarys = async () => {
       otherSalaryComponentId:
         employeeOtherSalaryComponentsModel.otherSalaryComponentId,
       otherAmount: employeeOtherSalaryComponentsModel.amount,
+      componentName: otherSalaryComponentsModel.componentName,
+      componentType: otherSalaryComponentsModel.componentType,
 
       createdAt: salaryModel.createdAt,
     })
@@ -120,6 +123,14 @@ export const getSalarys = async () => {
         )
       )
     )
+    .leftJoin(otherSalaryComponentsModel,
+      and(
+        eq(
+          employeeOtherSalaryComponentsModel.otherSalaryComponentId,
+          otherSalaryComponentsModel.otherSalaryComponentId
+        )
+      )
+    )
 
   /* ---------------- GROUP RESULT ---------------- */
 
@@ -136,22 +147,16 @@ export const getSalarys = async () => {
           grossSalary: row.grossSalary,
           netSalary: row.netSalary,
           doj: row.doj,
+
+          employeeId: row.employeeId,
+          employeeName: row.employeeName,
+
+          departmentId: row.departmentId,
+          departmentName: row.departmentName,
+
+          designationId: row.designationId,
+          designationName: row.designationName,
           createdAt: row.createdAt,
-
-          employee: {
-            employeeId: row.employeeId,
-            employeeName: row.employeeName,
-          },
-
-          department: {
-            departmentId: row.departmentId,
-            departmentName: row.departmentName,
-          },
-
-          designation: {
-            designationId: row.designationId,
-            designationName: row.designationName,
-          },
         },
         otherSalary: [],
       })
@@ -161,6 +166,12 @@ export const getSalarys = async () => {
       map.get(row.salaryId).otherSalary.push({
         otherSalaryComponentId: row.otherSalaryComponentId,
         amount: row.otherAmount,
+        componentName: row.componentName,
+        componentType: row.componentType,
+        salaryMonth: row.salaryMonth,
+        salaryYear: row.salaryYear,
+        employeeId: row.employeeId,
+        employeeName: row.employeeName,
       })
     }
   }
@@ -169,24 +180,103 @@ export const getSalarys = async () => {
 }
 
 // UPDATE
-export const updateSalary = async (
+type UpdateSalaryPayload = {
+  salary: Partial<NewSalary>
+  otherSalary?: NewEmployeeOtherSalaryComponent[]
+}
+export const updateSalaryWithOtherSalaryComponents = async (
   salaryId: number,
-  data: Partial<NewSalary>
+  data: UpdateSalaryPayload
 ) => {
-  await db
-    .update(salaryModel)
-    .set(data)
-    .where(eq(salaryModel.salaryId, salaryId))
+  return await db.transaction(async (tx) => {
+    /* ---------------- update salary ---------------- */
+    await tx
+      .update(salaryModel)
+      .set(data.salary)
+      .where(eq(salaryModel.salaryId, salaryId))
 
-  const [updated] = await db
-    .select()
-    .from(salaryModel)
-    .where(eq(salaryModel.salaryId, salaryId))
+    /* ---------------- delete old other salary components ---------------- */
+    await tx
+      .delete(employeeOtherSalaryComponentsModel)
+      .where(
+        and(
+          eq(
+            employeeOtherSalaryComponentsModel.employeeId,
+            data.salary.employeeId!
+          ),
+          eq(
+            employeeOtherSalaryComponentsModel.salaryMonth,
+            data.salary.salaryMonth!
+          ),
+          eq(
+            employeeOtherSalaryComponentsModel.salaryYear,
+            data.salary.salaryYear!
+          )
+        )
+      )
 
-  return updated
+    /* ---------------- insert new other salary components ---------------- */
+    if (data.otherSalary && data.otherSalary.length > 0) {
+      await tx
+        .insert(employeeOtherSalaryComponentsModel)
+        .values(data.otherSalary)
+    }
+
+    /* ---------------- fetch updated data ---------------- */
+    const [salary] = await tx
+      .select()
+      .from(salaryModel)
+      .where(eq(salaryModel.salaryId, salaryId))
+
+    const otherSalary = await tx
+      .select()
+      .from(employeeOtherSalaryComponentsModel)
+      .where(
+        and(
+          eq(employeeOtherSalaryComponentsModel.employeeId, salary.employeeId),
+          eq(
+            employeeOtherSalaryComponentsModel.salaryMonth,
+            salary.salaryMonth
+          ),
+          eq(employeeOtherSalaryComponentsModel.salaryYear, salary.salaryYear)
+        )
+      )
+
+    return {
+      salary,
+      otherSalary,
+    }
+  })
 }
 
 // DELETE
-export const deleteSalary = async (salaryId: number) => {
-  await db.delete(salaryModel).where(eq(salaryModel.salaryId, salaryId))
+export const deleteSalaryWithOtherSalaryComponents = async (
+  salaryId: number
+) => {
+  return await db.transaction(async (tx) => {
+    /* ---------------- get salary ---------------- */
+    const [salary] = await tx
+      .select()
+      .from(salaryModel)
+      .where(eq(salaryModel.salaryId, salaryId))
+
+    if (!salary) return
+
+    /* ---------------- delete other salary components ---------------- */
+    await tx
+      .delete(employeeOtherSalaryComponentsModel)
+      .where(
+        and(
+          eq(employeeOtherSalaryComponentsModel.employeeId, salary.employeeId),
+          eq(
+            employeeOtherSalaryComponentsModel.salaryMonth,
+            salary.salaryMonth
+          ),
+          eq(employeeOtherSalaryComponentsModel.salaryYear, salary.salaryYear)
+        )
+      )
+
+    /* ---------------- delete salary ---------------- */
+    await tx.delete(salaryModel).where(eq(salaryModel.salaryId, salaryId))
+  })
 }
