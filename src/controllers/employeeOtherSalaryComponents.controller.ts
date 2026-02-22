@@ -27,18 +27,22 @@ export const createEmployeeOtherSalaryComponentController = async (
 ) => {
   try {
     requirePermission(req, 'create_employee_other_salary_component')
-    const employeeOtherSalaryComponentData =
-      createEmployeeOtherSalaryComponentSchema.parse(req.body)
-    console.log(
-      '🚀 ~ createEmployeeOtherSalaryComponentController ~ employeeOtherSalaryComponentData:',
-      employeeOtherSalaryComponentData
+
+    const body = req.body
+
+    // Accept both object & array without validation
+    const dataArray = Array.isArray(body) ? body : [body]
+
+    // Parse each item individually (same schema)
+    const parsedData = dataArray.map((item) =>
+      createEmployeeOtherSalaryComponentSchema.parse(item)
     )
-    const employeeOtherSalaryComponent =
-      await createEmployeeOtherSalaryComponent(employeeOtherSalaryComponentData)
+
+    const result = await createEmployeeOtherSalaryComponent(parsedData)
 
     res.status(201).json({
       status: 'success',
-      data: employeeOtherSalaryComponent,
+      data: result,
     })
   } catch (error) {
     next(error)

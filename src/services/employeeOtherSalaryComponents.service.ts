@@ -10,26 +10,50 @@ import { BadRequestError } from './utils/errors.utils'
 
 // Create
 export const createEmployeeOtherSalaryComponent = async (
-  employeeOtherSalaryComponentData: Omit<
+  data: Omit<
     NewEmployeeOtherSalaryComponent,
     'employeeOtherSalaryComponentId' | 'updatedAt' | 'updatedBy'
-  >
+  >[]
 ) => {
   try {
-    const result = await db.insert(employeeOtherSalaryComponentsModel).values({
-      ...employeeOtherSalaryComponentData,
-      createdAt: new Date().getTime(),
-    })
+    const now = Date.now()
 
-    // Return the inserted data with the generated ID
+    const values = data.map((item) => ({
+      ...item,
+      createdAt: now,
+    }))
+
+    await db.insert(employeeOtherSalaryComponentsModel).values(values)
+
     return {
-      ...employeeOtherSalaryComponentData,
-      employeeOtherSalaryComponentId: result.insertId, // or result[0].insertId depending on your ORM
-      createdAt: new Date().getTime(),
+      insertedCount: values.length,
+      data: values,
     }
   } catch (error) {
     throw error
   }
+}
+
+// Update
+export const editEmployeeOtherSalaryComponent = async (
+  employeeOtherSalaryComponentId: number,
+  employeeOtherSalaryComponentData: Partial<NewEmployeeOtherSalaryComponent>
+) => {
+  const [updatedEmployeeOtherSalaryComponent] = await db
+    .update(employeeOtherSalaryComponentsModel)
+    .set(employeeOtherSalaryComponentData)
+    .where(
+      eq(
+        employeeOtherSalaryComponentsModel.employeeOtherSalaryComponentId,
+        employeeOtherSalaryComponentId
+      )
+    )
+
+  if (!updatedEmployeeOtherSalaryComponent) {
+    throw BadRequestError('Cloth employeeOtherSalaryComponent not found')
+  }
+
+  return updatedEmployeeOtherSalaryComponent
 }
 
 // Get All
@@ -91,28 +115,6 @@ export const getEmployeeOtherSalaryComponentById = async (
   }
 
   return employeeOtherSalaryComponent[0]
-}
-
-// Update
-export const editEmployeeOtherSalaryComponent = async (
-  employeeOtherSalaryComponentId: number,
-  employeeOtherSalaryComponentData: Partial<NewEmployeeOtherSalaryComponent>
-) => {
-  const [updatedEmployeeOtherSalaryComponent] = await db
-    .update(employeeOtherSalaryComponentsModel)
-    .set(employeeOtherSalaryComponentData)
-    .where(
-      eq(
-        employeeOtherSalaryComponentsModel.employeeOtherSalaryComponentId,
-        employeeOtherSalaryComponentId
-      )
-    )
-
-  if (!updatedEmployeeOtherSalaryComponent) {
-    throw BadRequestError('Cloth employeeOtherSalaryComponent not found')
-  }
-
-  return updatedEmployeeOtherSalaryComponent
 }
 
 // Delete

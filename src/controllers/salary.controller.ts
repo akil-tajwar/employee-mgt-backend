@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express'
 import {
-  createSalary,
+  createSalaryWithOtherSalaryComponents,
   getSalarys,
-  updateSalary,
-  deleteSalary,
+  updateSalaryWithOtherSalaryComponents,
+  deleteSalaryWithOtherSalaryComponents,
 } from '../services/salary.service'
 import { requirePermission } from '../services/utils/jwt.utils'
 
@@ -13,13 +13,13 @@ export const createSalaryController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'create_leave_type')
+    requirePermission(req, 'create_salary')
 
-    const salarys = await createSalary(req.body)
+    const result = await createSalaryWithOtherSalaryComponents(req.body)
 
     res.status(201).json({
       status: 'success',
-      data: salarys,
+      data: result,
     })
   } catch (err) {
     next(err)
@@ -32,7 +32,7 @@ export const getSalarysController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'view_leave_type')
+    requirePermission(req, 'view_salary')
     const salarys = await getSalarys()
     res.json(salarys)
   } catch (err) {
@@ -46,15 +46,18 @@ export const updateSalaryController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'edit_leave_type')
+    requirePermission(req, 'edit_salary')
 
     const { salaryId } = req.params
 
-    const salary = await updateSalary(Number(salaryId), req.body)
+    const result = await updateSalaryWithOtherSalaryComponents(
+      Number(salaryId),
+      req.body
+    )
 
     res.json({
       status: 'success',
-      data: salary,
+      data: result,
     })
   } catch (err) {
     next(err)
@@ -67,10 +70,16 @@ export const deleteSalaryController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'delete_leave_type')
+    requirePermission(req, 'delete_salary')
+
     const { salaryId } = req.params
-    await deleteSalary(Number(salaryId))
-    res.json({ status: 'success', message: 'Leave type deleted' })
+
+    await deleteSalaryWithOtherSalaryComponents(Number(salaryId))
+
+    res.json({
+      status: 'success',
+      message: 'Salary deleted successfully',
+    })
   } catch (err) {
     next(err)
   }
