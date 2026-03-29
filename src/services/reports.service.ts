@@ -68,12 +68,16 @@ export const salaryReport = async (salaryMonth: string, salaryYear: number) => {
       netSalary: salaryModel.netSalary,
       doj: salaryModel.doj,
       employeeId: salaryModel.employeeId,
+      empCode: employeeModel.empCode,
       employeeName: employeeModel.fullName,
       departmentId: salaryModel.departmentId,
       departmentName: departmentModel.departmentName,
       designationId: salaryModel.designationId,
       designationName: designationModel.designationName,
+      createdBy: salaryModel.createdBy,
       createdAt: salaryModel.createdAt,
+      updatedBy: salaryModel.updatedBy,
+      updatedAt: salaryModel.updatedAt,
     })
     .from(salaryModel)
     .innerJoin(
@@ -97,7 +101,7 @@ export const salaryReport = async (salaryMonth: string, salaryYear: number) => {
     .orderBy(salaryModel.employeeId)
 
   if (salaryData.length === 0) {
-    return []
+    return null
   }
 
   // Get all other salary components for the employees in this salary period
@@ -108,13 +112,19 @@ export const salaryReport = async (salaryMonth: string, salaryYear: number) => {
       employeeOtherSalaryComponentId:
         employeeOtherSalaryComponentsModel.employeeOtherSalaryComponentId,
       employeeId: employeeOtherSalaryComponentsModel.employeeId,
+      empCode: employeeModel.empCode,
+      employeeName: employeeModel.fullName,
       otherSalaryComponentId:
         employeeOtherSalaryComponentsModel.otherSalaryComponentId,
+      componentName: otherSalaryComponentsModel.componentName,
+      componentType: otherSalaryComponentsModel.componentType,
       amount: employeeOtherSalaryComponentsModel.amount,
       salaryMonth: employeeOtherSalaryComponentsModel.salaryMonth,
       salaryYear: employeeOtherSalaryComponentsModel.salaryYear,
-      componentName: otherSalaryComponentsModel.componentName,
-      componentType: otherSalaryComponentsModel.componentType,
+      createdBy: employeeOtherSalaryComponentsModel.createdBy,
+      createdAt: employeeOtherSalaryComponentsModel.createdAt,
+      updatedBy: employeeOtherSalaryComponentsModel.updatedBy,
+      updatedAt: employeeOtherSalaryComponentsModel.updatedAt,
     })
     .from(employeeOtherSalaryComponentsModel)
     .innerJoin(
@@ -122,6 +132,13 @@ export const salaryReport = async (salaryMonth: string, salaryYear: number) => {
       eq(
         employeeOtherSalaryComponentsModel.otherSalaryComponentId,
         otherSalaryComponentsModel.otherSalaryComponentId
+      )
+    )
+    .innerJoin(
+      employeeModel,
+      eq(
+        employeeOtherSalaryComponentsModel.employeeId,
+        employeeModel.employeeId
       )
     )
     .where(
@@ -137,30 +154,49 @@ export const salaryReport = async (salaryMonth: string, salaryYear: number) => {
       otherSalaryComponentsModel.componentName
     )
 
-  // Group other salary components by employee
-  const componentsByEmployee = otherSalaryComponents.reduce(
-    (acc, component) => {
-      if (!acc[component.employeeId]) {
-        acc[component.employeeId] = []
-      }
-      acc[component.employeeId].push(component)
-      return acc
-    },
-    {} as Record<number, typeof otherSalaryComponents>
-  )
-
-  // Combine salary data with their other components
-  const result = salaryData.map((salary) => ({
-    ...salary,
-    otherSalaryComponents: componentsByEmployee[salary.employeeId] || [],
-    // Calculate total allowances and deductions for summary
-    totalAllowances: (componentsByEmployee[salary.employeeId] || [])
-      .filter((c) => c.componentType === 'Allowance')
-      .reduce((sum, c) => sum + c.amount, 0),
-    totalDeductions: (componentsByEmployee[salary.employeeId] || [])
-      .filter((c) => c.componentType === 'Deduction')
-      .reduce((sum, c) => sum + c.amount, 0),
+  // Transform salary data to match the schema
+  // Since there should be only one salary record per employee, but if multiple, we'll handle
+  const transformedSalary = salaryData.map((salary) => ({
+    salaryMonth: salary.salaryMonth,
+    salaryYear: salary.salaryYear,
+    employeeId: salary.employeeId,
+    empCode: salary.empCode,
+    employeeName: salary.employeeName,
+    departmentId: salary.departmentId,
+    departmentName: salary.departmentName,
+    designationId: salary.designationId,
+    designationName: salary.designationName,
+    basicSalary: salary.basicSalary,
+    grossSalary: salary.grossSalary,
+    netSalary: salary.netSalary,
+    doj: salary.doj,
+    createdBy: salary.createdBy,
+    createdAt: salary.createdAt,
+    updatedBy: salary.updatedBy,
+    updatedAt: salary.updatedAt,
   }))
 
-  return result
+  // Transform other salary components to match the schema
+  const transformedOtherSalary = otherSalaryComponents.map((component) => ({
+    employeeId: component.employeeId,
+    empCode: component.empCode,
+    employeeName: component.employeeName,
+    otherSalaryComponentId: component.otherSalaryComponentId,
+    componentName: component.componentName,
+    componentType: component.componentType as 'Allowance' | 'Deduction',
+    salaryMonth: component.salaryMonth,
+    salaryYear: component.salaryYear,
+    amount: component.amount,
+    createdBy: component.createdBy,
+    createdAt: component.createdAt,
+    updatedBy: component.updatedBy,
+    updatedAt: component.updatedAt,
+  }))
+
+  // Return in the format expected by the schema
+  return {
+    salary:
+      transformedSalary.length === 1 ? transformedSalary[0] : transformedSalary,
+    otherSalary: transformedOtherSalary,
+  }
 }
