@@ -1,11 +1,10 @@
-import { NextFunction, Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { requirePermission } from '../services/utils/jwt.utils'
 import {
   employeeAttendanceReport,
   salaryReport,
 } from '../services/reports.service'
 
-// controller
 export const employeeAttendanceReportController = async (
   req: Request,
   res: Response
@@ -37,10 +36,9 @@ export const employeeAttendanceReportController = async (
   }
 }
 
-// controller
 export const salaryReportController = async (req: Request, res: Response) => {
   try {
-    // requirePermission(req, 'view_salary_report')
+    requirePermission(req, 'view_salary_report')
     const { salaryMonth, salaryYear } = req.query
 
     // Validate required query parameters

@@ -18,6 +18,7 @@ export const employeeAttendanceReport = async (
     .select({
       employeeAttendanceId: employeeAttendanceModel.employeeAttendanceId,
       employeeId: employeeAttendanceModel.employeeId,
+      empCode: employeeModel.empCode,
       employeeName: employeeModel.fullName,
       designationId: employeeModel.designationId,
       designationName: designationModel.designationName,
@@ -55,7 +56,6 @@ export const employeeAttendanceReport = async (
     )
 }
 
-// service
 export const salaryReport = async (salaryMonth: string, salaryYear: number) => {
   // Get main salary data with employee, department, and designation details
   const salaryData = await db
