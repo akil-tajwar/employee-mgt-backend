@@ -100,8 +100,7 @@ export const employeeModel = sqliteTable(
     doj: text('doj').notNull(),
     gender: text('gender').notNull(),
     bloodGroup: text('blood_group'),
-    basicSalary: real('basic_salary'),
-    grossSalary: real('gross_salary').notNull(),
+    basicSalary: real('basic_salary').notNull(),
     isActive: integer('is_active').notNull().default(1),
     empCode: text('emp_code').notNull().unique(),
     departmentId: integer('department_id')
@@ -264,6 +263,7 @@ export const otherSalaryComponentsModel = sqliteTable(
     }),
     componentName: text('component_name').notNull(),
     componentType: text('component_type').notNull(), // e.g., 'Allowance', 'Deduction'
+    amount: integer().notNull(),
     status: integer('status').notNull().default(1), // 1 for active, 0 for inactive
     createdBy: integer('created_by').notNull(),
     createdAt: integer('created_at').default(sql`(unixepoch())`),
