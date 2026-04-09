@@ -11,13 +11,6 @@ import {
 } from '../services/employeeAttendances.service'
 import { BadRequestError } from '../services/utils/errors.utils'
 
-// Schema validation
-const createEmployeeAttendanceSchema = createInsertSchema(employeeAttendanceModel).omit({
-  employeeAttendanceId: true,
-})
-
-const editEmployeeAttendanceSchema = createEmployeeAttendanceSchema.partial()
-
 export const createEmployeeAttendanceController = async (
   req: Request,
   res: Response,

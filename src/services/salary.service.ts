@@ -74,7 +74,9 @@ export const getSalarys = async () => {
 
       // Employee
       employeeId: employeeModel.employeeId,
+      empCode: employeeModel.empCode,
       employeeName: employeeModel.fullName,
+      
 
       // Department
       departmentId: departmentModel.departmentId,

@@ -1,6 +1,8 @@
-import { eq } from 'drizzle-orm'
+import { eq, is } from 'drizzle-orm'
 import { db } from '../config/database'
 import {
+  departmentModel,
+  designationModel,
   employeeModel,
   employeeOtherSalaryComponentsModel,
   NewEmployeeOtherSalaryComponent,
@@ -66,15 +68,20 @@ export const getAllEmployeeOtherSalaryComponents = async () => {
       // Employee fields
       employeeId: employeeModel.employeeId,
       employeeName: employeeModel.fullName, // adjust column name
+      empCode: employeeModel.empCode, // adjust column name
+      employeeDepartmentName: departmentModel.departmentName, // adjust column name
+      employeeDesignationName: designationModel.designationName, // adjust column name
 
       // Other salary component fields
       otherSalaryComponentId: otherSalaryComponentsModel.otherSalaryComponentId,
       componentName: otherSalaryComponentsModel.componentName, // adjust
+      componentType: otherSalaryComponentsModel.componentType, // adjust
 
       // Salary data
       salaryMonth: employeeOtherSalaryComponentsModel.salaryMonth,
       salaryYear: employeeOtherSalaryComponentsModel.salaryYear,
       amount: employeeOtherSalaryComponentsModel.amount,
+      isAuthorized: employeeOtherSalaryComponentsModel.isAuthorized,
 
       createdAt: employeeOtherSalaryComponentsModel.createdAt,
     })
@@ -92,6 +99,14 @@ export const getAllEmployeeOtherSalaryComponents = async () => {
         employeeOtherSalaryComponentsModel.otherSalaryComponentId,
         otherSalaryComponentsModel.otherSalaryComponentId
       )
+    )
+    .leftJoin(
+      departmentModel,
+      eq(employeeModel.departmentId, departmentModel.departmentId)
+    )
+    .leftJoin(
+      designationModel,
+      eq(employeeModel.designationId, designationModel.designationId)
     )
 }
 
