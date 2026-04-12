@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import {
-  createSalaryController,
+  createSalariesController,
   getSalarysController,
   updateSalaryController,
   deleteSalaryController,
@@ -9,7 +9,7 @@ import { authenticateUser } from '../middlewares/auth.middleware'
 
 const router = Router()
 
-router.post('/create', authenticateUser, createSalaryController)
+router.post('/create', authenticateUser, createSalariesController)
 router.get('/getAll', authenticateUser, getSalarysController)
 router.patch('/edit/:salaryId', authenticateUser, updateSalaryController)
 router.delete('/delete/:salaryId', authenticateUser, deleteSalaryController)

@@ -1,30 +1,36 @@
 import { Request, Response, NextFunction } from 'express'
 import {
-  createSalaryWithOtherSalaryComponents,
+  createSalaries,
   getSalarys,
   updateSalaryWithOtherSalaryComponents,
   deleteSalaryWithOtherSalaryComponents,
 } from '../services/salary.service'
 import { requirePermission } from '../services/utils/jwt.utils'
 
-export const createSalaryController = async (
+export const createSalariesController = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'create_salary')
+    requirePermission(req, 'create_salary');
 
-    const result = await createSalaryWithOtherSalaryComponents(req.body)
+    // Ensure request body is an array
+    if (!Array.isArray(req.body)) {
+      throw new Error('Request body must be an array of salary records');
+    }
+
+    const result = await createSalaries(req.body);
 
     res.status(201).json({
       status: 'success',
+      message: `${result.length} salaries created successfully`,
       data: result,
-    })
+    });
   } catch (err) {
-    next(err)
+    next(err);
   }
-}
+};
 
 export const getSalarysController = async (
   req: Request,
