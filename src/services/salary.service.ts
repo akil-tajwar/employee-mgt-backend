@@ -9,54 +9,30 @@ import {
   NewEmployeeOtherSalaryComponent,
   otherSalaryComponentsModel,
 } from '../schemas'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 // CREATE
-type CreateSalaryPayload = {
-  salary: NewSalary
-  otherSalary?: NewEmployeeOtherSalaryComponent[]
-}
-
-export const createSalaryWithOtherSalaryComponents = async (
-  data: CreateSalaryPayload
+export const createSalaries = async (
+  salariesData: Array<
+    Omit<NewSalary, 'salaryId' | 'updatedAt' | 'updatedBy' | 'createdAt'>
+  >
 ) => {
-  return await db.transaction(async (tx) => {
-    /* -------------------- insert salary -------------------- */
-    const salaryResult = await tx.insert(salaryModel).values(data.salary)
+  try {
+    const salariesWithTimestamps = salariesData.map((salary) => ({
+      ...salary,
+      createdAt: new Date().getTime(),
+    }))
 
-    const salaryId = Number(salaryResult.lastInsertRowid)
+    const result = await db.insert(salaryModel).values(salariesWithTimestamps)
 
-    /* ---------------- insert other salary components ---------------- */
-    if (data.otherSalary && data.otherSalary.length > 0) {
-      await tx
-        .insert(employeeOtherSalaryComponentsModel)
-        .values(data.otherSalary)
-    }
-
-    /* ---------------- fetch inserted data ---------------- */
-    const salary = await tx
-      .select()
-      .from(salaryModel)
-      .where(eq(salaryModel.salaryId, salaryId))
-      .limit(1)
-
-    const otherSalary = data.otherSalary?.length
-      ? await tx
-          .select()
-          .from(employeeOtherSalaryComponentsModel)
-          .where(
-            eq(
-              employeeOtherSalaryComponentsModel.employeeId,
-              data.salary.employeeId
-            )
-          )
-      : []
-
-    return {
-      salary: salary[0],
-      otherSalary,
-    }
-  })
+    // Return the inserted data with generated IDs
+    return salariesWithTimestamps.map((salary, index) => ({
+      ...salary,
+      salaryId: result.insertId + index, // Adjust based on your ORM
+    }))
+  } catch (error) {
+    throw error
+  }
 }
 
 // GET ALL
@@ -76,7 +52,6 @@ export const getSalarys = async () => {
       employeeId: employeeModel.employeeId,
       empCode: employeeModel.empCode,
       employeeName: employeeModel.fullName,
-      
 
       // Department
       departmentId: departmentModel.departmentId,
@@ -125,7 +100,8 @@ export const getSalarys = async () => {
         )
       )
     )
-    .leftJoin(otherSalaryComponentsModel,
+    .leftJoin(
+      otherSalaryComponentsModel,
       and(
         eq(
           employeeOtherSalaryComponentsModel.otherSalaryComponentId,

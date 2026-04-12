@@ -170,6 +170,7 @@ export const getAllEmployees = async () => {
       officialPhone: employeeModel.officialPhone,
       personalPhone: employeeModel.personalPhone,
       gender: employeeModel.gender,
+      doj: employeeModel.doj,
       empCode: employeeModel.empCode,
       basicSalary: employeeModel.basicSalary,
       isActive: employeeModel.isActive,

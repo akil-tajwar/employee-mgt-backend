@@ -29,6 +29,7 @@ export const employeeAttendanceReport = async (
       outTime: employeeAttendanceModel.outTime,
       lateInMinutes: employeeAttendanceModel.lateInMinutes,
       earlyOutMinutes: employeeAttendanceModel.earlyOutMinutes,
+      isAbsent: employeeAttendanceModel.isAbsent,
       createdAt: employeeAttendanceModel.createdAt,
     })
     .from(employeeAttendanceModel)
