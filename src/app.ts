@@ -19,8 +19,8 @@ app.use(
     ) => {
       const allowedOrigins = [
         "http://localhost:3000",
-        "http://srv938571.hstgr.cloud:6050",
-        "https://www.srv938571.hstgr.cloud:6050",
+        "http://srv938571.hstgr.cloud:6070",
+        "https://www.srv938571.hstgr.cloud:6070",
       ];
 
       // Allow non-browser requests (no origin) and whitelisted domains

@@ -263,9 +263,10 @@ export const otherSalaryComponentsModel = sqliteTable(
       autoIncrement: true,
     }),
     componentName: text('component_name').notNull(),
-    componentType: text('component_type').notNull(), // e.g., 'Allowance', 'Deduction'
+    componentType: text('component_type').notNull(),
     amount: integer().notNull(),
-    status: integer('status').notNull().default(1), // 1 for active, 0 for inactive
+    forDays: integer('for_days').notNull(),
+    status: integer('status').notNull().default(1),
     createdBy: integer('created_by').notNull(),
     createdAt: integer('created_at').default(sql`(unixepoch())`),
     updatedBy: integer('updated_by'),
@@ -343,6 +344,19 @@ export const salaryModel = sqliteTable(
     ),
   })
 )
+
+export const loneModel = sqliteTable('lone', {
+  loneId: integer('lone_id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  loneDate: text('lone_date').notNull(),
+  employeeId: integer('employee_id')
+    .notNull()
+    .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
+  createdBy: integer('created_by').notNull(),
+  createdAt: integer('created_at').default(sql`(unixepoch())`),
+  updatedBy: integer('updated_by'),
+  updatedAt: integer('updated_at'),
+})
 
 // ========================
 // Relations
@@ -479,6 +493,13 @@ export const salaryRelations = relations(salaryModel, ({ one }) => ({
   }),
 }))
 
+export const loneRelations = relations(loneModel, ({ one }) => ({
+  employee: one(employeeModel, {
+    fields: [loneModel.employeeId],
+    references: [employeeModel.employeeId],
+  }),
+}))
+
 // ========================
 // Types
 // ========================
@@ -524,3 +545,5 @@ export type NewEmployeeOtherSalaryComponent =
   typeof employeeOtherSalaryComponentsModel.$inferInsert
 export type Salary = typeof salaryModel.$inferSelect
 export type NewSalary = typeof salaryModel.$inferInsert
+export type Lone = typeof loneModel.$inferSelect
+export type NewLone = typeof loneModel.$inferInsert
