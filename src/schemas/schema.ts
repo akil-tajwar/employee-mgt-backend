@@ -352,6 +352,7 @@ export const lonesModel = sqliteTable('lone', {
   employeeId: integer('employee_id')
     .notNull()
     .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
+  amount: real('amount').notNull(),
   createdBy: integer('created_by').notNull(),
   createdAt: integer('created_at').default(sql`(unixepoch())`),
   updatedBy: integer('updated_by'),

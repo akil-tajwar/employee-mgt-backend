@@ -44,9 +44,8 @@ export const updateLoneController = async (
   try {
     requirePermission(req, 'edit_lone')
     const { loneId } = req.params
-    const { loneName, updatedBy } = req.body
 
-    const lone = await updateLone(Number(loneId), loneName, updatedBy)
+    const lone = await updateLone({ loneId: Number(loneId), ...req.body })
     res.json({ status: 'success', data: lone })
   } catch (err) {
     next(err)
