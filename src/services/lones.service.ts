@@ -1,5 +1,5 @@
 import { db } from '../config/database'
-import { lonesModel, NewLone } from '../schemas'
+import { departmentModel, designationModel, employeeModel, leaveTypeModel, Lone, lonesModel, NewLone } from '../schemas'
 import { eq } from 'drizzle-orm'
 
 // CREATE
@@ -20,24 +20,42 @@ export const createLone = async (data: NewLone) => {
 
 // READ ALL
 export const getLones = async () => {
-  return await db.select().from(lonesModel)
-}
+  return await db
+    .select({
+      // Lone fields
+      loneId: lonesModel.loneId,
+      loneName: lonesModel.loneName,
+      loneDate: lonesModel.loneDate,
+      employeeId: lonesModel.employeeId,
+      createdBy: lonesModel.createdBy,
+      createdAt: lonesModel.createdAt,
+      updatedBy: lonesModel.updatedBy,
+      updatedAt: lonesModel.updatedAt,
+      // Employee fields (adjust based on your employeeModel schema)
+      empCode: employeeModel.empCode, // example field
+      employeeName: employeeModel.fullName, // example field
+      designationName: designationModel.designationName, // example field
+      departmentName: departmentModel.departmentName, // example field
+    })
+    .from(lonesModel)
+    .leftJoin(employeeModel, eq(lonesModel.employeeId, employeeModel.employeeId))
+    .leftJoin(designationModel, eq(employeeModel.designationId, designationModel.designationId))
+    .leftJoin(departmentModel, eq(employeeModel.departmentId, departmentModel.departmentId))
+};
 
 // UPDATE
 export const updateLone = async (
-  loneId: number,
-  loneName: string,
-  updatedBy: number
+  data: Lone
 ) => {
   await db
     .update(lonesModel)
-    .set({ loneName, updatedBy })
-    .where(eq(lonesModel.loneId, loneId))
+    .set({ loneName: data.loneName, updatedBy: data.updatedBy })
+    .where(eq(lonesModel.loneId, data.loneId))
 
   const [updated] = await db
     .select()
     .from(lonesModel)
-    .where(eq(lonesModel.loneId, loneId))
+    .where(eq(lonesModel.loneId, data.loneId))
 
   return updated
 }
