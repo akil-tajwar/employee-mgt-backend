@@ -345,9 +345,9 @@ export const salaryModel = sqliteTable(
   })
 )
 
-export const loneModel = sqliteTable('lone', {
+export const lonesModel = sqliteTable('lone', {
   loneId: integer('lone_id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull(),
+  loneName: text('lone_name').notNull(),
   loneDate: text('lone_date').notNull(),
   employeeId: integer('employee_id')
     .notNull()
@@ -493,9 +493,9 @@ export const salaryRelations = relations(salaryModel, ({ one }) => ({
   }),
 }))
 
-export const loneRelations = relations(loneModel, ({ one }) => ({
+export const loneRelations = relations(lonesModel, ({ one }) => ({
   employee: one(employeeModel, {
-    fields: [loneModel.employeeId],
+    fields: [lonesModel.employeeId],
     references: [employeeModel.employeeId],
   }),
 }))
@@ -545,5 +545,5 @@ export type NewEmployeeOtherSalaryComponent =
   typeof employeeOtherSalaryComponentsModel.$inferInsert
 export type Salary = typeof salaryModel.$inferSelect
 export type NewSalary = typeof salaryModel.$inferInsert
-export type Lone = typeof loneModel.$inferSelect
-export type NewLone = typeof loneModel.$inferInsert
+export type Lone = typeof lonesModel.$inferSelect
+export type NewLone = typeof lonesModel.$inferInsert

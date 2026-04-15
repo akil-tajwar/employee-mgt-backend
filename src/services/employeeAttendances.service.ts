@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { db } from '../config/database'
 import {
   employeeAttendanceModel,
@@ -81,7 +81,7 @@ export const createEmployeeAttendance = async (
 
     // If we need to add a salary component
     if (otherSalaryComponentId) {
-      // Fetch the amount from otherSalaryComponents table
+      // Fetch the salary component details including forDays
       const [salaryComponent] = await db
         .select()
         .from(otherSalaryComponentsModel)
@@ -94,13 +94,47 @@ export const createEmployeeAttendance = async (
         .limit(1)
 
       if (salaryComponent) {
+        let isAuthorized = 1 // Default to authorized
+
+        // Check if forDays is 0, then always authorized
+        if (salaryComponent.forDays === 0) {
+          isAuthorized = 1
+        } else {
+          // Get count of existing records for this employee, month, year, and component
+          const existingCountResult = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(employeeOtherSalaryComponentsModel)
+            .where(
+              and(
+                eq(
+                  employeeOtherSalaryComponentsModel.employeeId,
+                  item.employeeId
+                ),
+                eq(
+                  employeeOtherSalaryComponentsModel.otherSalaryComponentId,
+                  otherSalaryComponentId
+                ),
+                eq(employeeOtherSalaryComponentsModel.salaryMonth, salaryMonth),
+                eq(employeeOtherSalaryComponentsModel.salaryYear, salaryYear)
+              )
+            )
+
+          const existingCount = existingCountResult[0]?.count || 0
+
+          // Calculate isAuthorized based on forDays cycle
+          const forDays = salaryComponent.forDays || 1 // Default to 1 if null/undefined
+          // The cycle: first forDays entries = authorized, next forDays = unauthorized, repeats
+          const cyclePosition = existingCount % (forDays * 2)
+          isAuthorized = cyclePosition < forDays ? 1 : 0
+        }
+
         salaryComponentsToInsert.push({
           employeeId: item.employeeId,
           otherSalaryComponentId: otherSalaryComponentId,
           salaryMonth: salaryMonth,
           salaryYear: salaryYear,
-          amount: salaryComponent.amount, // Use amount from the component table
-          isAuthorized: 0,
+          amount: salaryComponent.amount,
+          isAuthorized: isAuthorized,
           createdBy: item.createdBy,
           createdAt: now,
         })
