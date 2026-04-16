@@ -12,7 +12,8 @@ import employeeAttendanceRoutes from './employeeAttendances.routes'
 import otherSalaryComponentsRoutes from './otherSalaryComponents.routes'
 import employeeOtherSalaryComponentsRoutes from './employeeOtherSalaryComponents.routes'
 import salaryRoutes from './salary.routes'
-import loneRoutes from './lones.routes'
+import employeeLoneRoutes from './lones.routes'
+import employeeLeaveroutes from './employeeLeaves.routes'
 import reportRoutes from './reports.routes'
 
 const router = Router()
@@ -33,7 +34,8 @@ router.use(
   employeeOtherSalaryComponentsRoutes
 )
 router.use('/salary', salaryRoutes)
-router.use('/lones', loneRoutes)
+router.use('/employeeLones', employeeLoneRoutes)
+router.use('/employeeLeaves', employeeLeaveroutes)
 router.use('/reports', reportRoutes)
 
 export default router

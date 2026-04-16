@@ -4,6 +4,7 @@ import {
   getEmployeeLeaves,
   updateEmployeeLeave,
   deleteEmployeeLeave,
+  getEmployeeLeaveTypes,
 } from '../services/employeeLeaves.service'
 import { requirePermission } from '../services/utils/jwt.utils'
 
@@ -14,7 +15,7 @@ export const createEmployeeLeaveController = async (
 ) => {
 
   try {
-    requirePermission(req, 'create_employeeLeave')
+    requirePermission(req, 'create_employee_leave')
     const employeeLeave = await createEmployeeLeave(req.body)
     res.status(201).json({ status: 'success', data: employeeLeave })
   } catch (err) {
@@ -29,7 +30,7 @@ export const getEmployeeLeavesController = async (
 ) => {
 
   try {
-    requirePermission(req, 'view_employeeLeave')
+    requirePermission(req, 'view_employee_leave')
     const employeeLeaves = await getEmployeeLeaves()
     res.json(employeeLeaves)
   } catch (err) {
@@ -44,7 +45,7 @@ export const updateEmployeeLeaveController = async (
 ) => {
 
   try {
-    requirePermission(req, 'edit_employeeLeave')
+    requirePermission(req, 'edit_employee_leave')
     const { employeeLeaveId } = req.params
 
     const employeeLeave = await updateEmployeeLeave({ employeeLeaveId: Number(employeeLeaveId), ...req.body })
@@ -61,10 +62,25 @@ export const deleteEmployeeLeaveController = async (
 ) => {
 
   try {
-    requirePermission(req, 'delete_employeeLeave')
+    requirePermission(req, 'delete_employee_leave')
     const { employeeLeaveId } = req.params
     await deleteEmployeeLeave(Number(employeeLeaveId))
     res.json({ status: 'success', message: 'EmployeeLeave deleted' })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export const getEmployeeLeaveTypesController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+
+  try {
+    requirePermission(req, 'view_employee_leave_type')
+    const employeeLeaves = await getEmployeeLeaveTypes()
+    res.json(employeeLeaves)
   } catch (err) {
     next(err)
   }

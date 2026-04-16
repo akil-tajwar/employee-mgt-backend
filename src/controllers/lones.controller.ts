@@ -13,7 +13,7 @@ export const createLoneController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'create_lone')
+    // requirePermission(req, 'create_employee_lone')
     const { data } = req.body
     const lone = await createLone(data)
     res.status(201).json({ status: 'success', data: lone })
@@ -28,7 +28,7 @@ export const getLonesController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'view_lone')
+    // requirePermission(req, 'viewe_mployee_lone')
     const lones = await getLones()
     res.json(lones)
   } catch (err) {
@@ -42,11 +42,10 @@ export const updateLoneController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'edit_lone')
-    const { loneId } = req.params
-    const { loneName, updatedBy } = req.body
+    requirePermission(req, 'edit_employee_lone')
+    const { employeeLoneId } = req.params
 
-    const lone = await updateLone(Number(loneId), loneName, updatedBy)
+    const lone = await updateLone({ employeeLoneId: Number(employeeLoneId), ...req.body })
     res.json({ status: 'success', data: lone })
   } catch (err) {
     next(err)
@@ -59,9 +58,9 @@ export const deleteLoneController = async (
   next: NextFunction
 ) => {
   try {
-    requirePermission(req, 'delete_lone')
-    const { loneId } = req.params
-    await deleteLone(Number(loneId))
+    requirePermission(req, 'delete_employee_lone')
+    const { employeeLoneId } = req.params
+    await deleteLone(Number(employeeLoneId))
     res.json({ status: 'success', message: 'Lone deleted' })
   } catch (err) {
     next(err)
