@@ -232,6 +232,14 @@ export const getEmployeeLeaves = async () => {
       leaveTypeModel,
       eq(employeeLeaveModel.leaveTypeId, leaveTypeModel.leaveTypeId)
     )
+    .leftJoin(
+      designationModel,
+      eq(employeeModel.designationId, designationModel.designationId)
+    )
+    .leftJoin(
+      departmentModel,
+      eq(employeeModel.departmentId, departmentModel.departmentId)
+    )
 }
 
 // UPDATE
@@ -254,4 +262,38 @@ export const deleteEmployeeLeave = async (employeeLeaveId: number) => {
   await db
     .delete(employeeLeaveModel)
     .where(eq(employeeLeaveModel.employeeLeaveId, employeeLeaveId))
+}
+
+export const getEmployeeLeaveTypes = async () => {
+  const result = await db
+    .select({
+      employeeLeaveTypeId: employeeLeaveTypeModel.employeeLeaveTypeId,
+      employeeId: employeeLeaveTypeModel.employeeId,
+      leaveTypeId: employeeLeaveTypeModel.leaveTypeId,
+      leaveTypeName: leaveTypeModel.leaveTypeName,
+      totalLeaves: leaveTypeModel.totalLeaves,
+      employeeName: employeeModel.fullName,
+      empCode: employeeModel.empCode,
+      designationName: designationModel.designationName,
+      departmentName: departmentModel.departmentName,
+    })
+    .from(employeeLeaveTypeModel)
+    .leftJoin(
+      employeeModel,
+      eq(employeeLeaveTypeModel.employeeId, employeeModel.employeeId)
+    )
+    .leftJoin(
+      leaveTypeModel,
+      eq(employeeLeaveTypeModel.leaveTypeId, leaveTypeModel.leaveTypeId)
+    )
+    .leftJoin(
+      designationModel,
+      eq(employeeModel.designationId, designationModel.designationId)
+    )
+    .leftJoin(
+      departmentModel,
+      eq(employeeModel.departmentId, departmentModel.departmentId)
+    )
+
+  return result
 }

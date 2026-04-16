@@ -11,7 +11,7 @@ const router = Router()
 
 router.post('/create', authenticateUser, createLoneController)
 router.get('/getAll', authenticateUser, getLonesController)
-router.patch('/edit/:loneId', authenticateUser, updateLoneController)
-router.delete('/delete/:loneId', authenticateUser, deleteLoneController)
+router.patch('/edit/:employeeLoneId', authenticateUser, updateLoneController)
+router.delete('/delete/:employeeLoneId', authenticateUser, deleteLoneController)
 
 export default router

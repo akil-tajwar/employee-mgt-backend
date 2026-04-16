@@ -1,5 +1,5 @@
 import { db } from '../config/database'
-import { departmentModel, designationModel, employeeModel, employeeOtherSalaryComponentsModel, leaveTypeModel, Lone, lonesModel, NewLone } from '../schemas'
+import { departmentModel, designationModel, employeeModel, employeeOtherSalaryComponentsModel, leaveTypeModel, Lone, employeeLoneModel, NewLone } from '../schemas'
 import { eq } from 'drizzle-orm'
 import { BadRequestError } from './utils/errors.utils'
 
@@ -27,14 +27,14 @@ export const createLone = async (data: NewLone) => {
 
   // Insert into lones table
   const result = await db
-    .insert(lonesModel)
+    .insert(employeeLoneModel)
     .values({
       ...data,
       createdAt: now,
       updatedAt: now,
     })
 
-  const loneId = Number(result.lastInsertRowid)
+  const employeeLoneId = Number(result.lastInsertRowid)
 
   // Parse loan date to get month and year
   const loneDate = new Date(data.loneDate)
@@ -58,8 +58,8 @@ export const createLone = async (data: NewLone) => {
   // Fetch and return the created lone
   const [lone] = await db
     .select()
-    .from(lonesModel)
-    .where(eq(lonesModel.loneId, loneId))
+    .from(employeeLoneModel)
+    .where(eq(employeeLoneModel.employeeLoneId, employeeLoneId))
 
   return lone
 }
@@ -69,22 +69,22 @@ export const getLones = async () => {
   return await db
     .select({
       // Lone fields
-      loneId: lonesModel.loneId,
-      loneName: lonesModel.loneName,
-      loneDate: lonesModel.loneDate,
-      employeeId: lonesModel.employeeId,
-      createdBy: lonesModel.createdBy,
-      createdAt: lonesModel.createdAt,
-      updatedBy: lonesModel.updatedBy,
-      updatedAt: lonesModel.updatedAt,
+      employeeLoneId: employeeLoneModel.employeeLoneId,
+      employeeLoneName: employeeLoneModel.employeeLoneName,
+      loneDate: employeeLoneModel.loneDate,
+      employeeId: employeeLoneModel.employeeId,
+      createdBy: employeeLoneModel.createdBy,
+      createdAt: employeeLoneModel.createdAt,
+      updatedBy: employeeLoneModel.updatedBy,
+      updatedAt: employeeLoneModel.updatedAt,
       // Employee fields (adjust based on your employeeModel schema)
       empCode: employeeModel.empCode, // example field
       employeeName: employeeModel.fullName, // example field
       designationName: designationModel.designationName, // example field
       departmentName: departmentModel.departmentName, // example field
     })
-    .from(lonesModel)
-    .leftJoin(employeeModel, eq(lonesModel.employeeId, employeeModel.employeeId))
+    .from(employeeLoneModel)
+    .leftJoin(employeeModel, eq(employeeLoneModel.employeeId, employeeModel.employeeId))
     .leftJoin(designationModel, eq(employeeModel.designationId, designationModel.designationId))
     .leftJoin(departmentModel, eq(employeeModel.departmentId, departmentModel.departmentId))
 };
@@ -94,19 +94,19 @@ export const updateLone = async (
   data: Lone
 ) => {
   await db
-    .update(lonesModel)
-    .set({ loneName: data.loneName, updatedBy: data.updatedBy })
-    .where(eq(lonesModel.loneId, data.loneId))
+    .update(employeeLoneModel)
+    .set({ employeeLoneName: data.employeeLoneName, updatedBy: data.updatedBy })
+    .where(eq(employeeLoneModel.employeeLoneId, data.employeeLoneId))
 
   const [updated] = await db
     .select()
-    .from(lonesModel)
-    .where(eq(lonesModel.loneId, data.loneId))
+    .from(employeeLoneModel)
+    .where(eq(employeeLoneModel.employeeLoneId, data.employeeLoneId))
 
   return updated
 }
 
 // DELETE
-export const deleteLone = async (loneId: number) => {
-  await db.delete(lonesModel).where(eq(lonesModel.loneId, loneId))
+export const deleteLone = async (employeeLoneId: number) => {
+  await db.delete(employeeLoneModel).where(eq(employeeLoneModel.employeeLoneId, employeeLoneId))
 }
