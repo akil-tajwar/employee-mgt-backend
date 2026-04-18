@@ -1,11 +1,23 @@
 import { db } from '../config/database'
-import { departmentModel, designationModel, employeeModel, employeeOtherSalaryComponentsModel, leaveTypeModel, Lone, employeeLoneModel, NewLone } from '../schemas'
+import {
+  departmentModel,
+  designationModel,
+  employeeModel,
+  employeeOtherSalaryComponentsModel,
+  leaveTypeModel,
+  Lone,
+  employeeLoneModel,
+  NewLone,
+} from '../schemas'
 import { eq } from 'drizzle-orm'
 import { BadRequestError } from './utils/errors.utils'
 
 // CREATE
 export const createLone = async (data: NewLone) => {
   // Fetch employee's basic salary
+  console.log('🚀 ~ createLone ~ data:', data)
+  console.log('Employee model table name:', employeeModel);
+// This will show you what table name Drizzle is actually using
   const [employee] = await db
     .select()
     .from(employeeModel)
@@ -26,31 +38,34 @@ export const createLone = async (data: NewLone) => {
   const now = Date.now()
 
   // Insert into lones table
-  const result = await db
-    .insert(employeeLoneModel)
-    .values({
-      ...data,
-      createdAt: now,
-      updatedAt: now,
-    })
+  const result = await db.insert(employeeLoneModel).values({
+    ...data,
+    createdAt: now,
+    updatedAt: now,
+  })
 
   const employeeLoneId = Number(result.lastInsertRowid)
 
   // Parse loan date to get month and year
   const loneDate = new Date(data.loneDate)
-  const salaryMonth = loneDate.toLocaleString('default', {
+
+  // Calculate next month
+  const nextMonthDate = new Date(loneDate)
+  nextMonthDate.setMonth(loneDate.getMonth() + 1)
+
+  const salaryMonth = nextMonthDate.toLocaleString('default', {
     month: 'long',
   })
-  const salaryYear = loneDate.getFullYear()
+  const salaryYear = nextMonthDate.getFullYear()
 
   // Insert into employeeOtherSalaryComponents table
   await db.insert(employeeOtherSalaryComponentsModel).values({
     employeeId: data.employeeId,
-    otherSalaryComponentId: 6, // Lone component ID
+    otherSalaryComponentId: 6,
     salaryMonth: salaryMonth,
     salaryYear: salaryYear,
     amount: data.amount,
-    isAuthorized: 1, // Always authorized for lone
+    isAuthorized: 0,
     createdBy: data.createdBy,
     createdAt: now,
   })
@@ -84,15 +99,22 @@ export const getLones = async () => {
       departmentName: departmentModel.departmentName, // example field
     })
     .from(employeeLoneModel)
-    .leftJoin(employeeModel, eq(employeeLoneModel.employeeId, employeeModel.employeeId))
-    .leftJoin(designationModel, eq(employeeModel.designationId, designationModel.designationId))
-    .leftJoin(departmentModel, eq(employeeModel.departmentId, departmentModel.departmentId))
-};
+    .leftJoin(
+      employeeModel,
+      eq(employeeLoneModel.employeeId, employeeModel.employeeId)
+    )
+    .leftJoin(
+      designationModel,
+      eq(employeeModel.designationId, designationModel.designationId)
+    )
+    .leftJoin(
+      departmentModel,
+      eq(employeeModel.departmentId, departmentModel.departmentId)
+    )
+}
 
 // UPDATE
-export const updateLone = async (
-  data: Lone
-) => {
+export const updateLone = async (data: Lone) => {
   await db
     .update(employeeLoneModel)
     .set({ employeeLoneName: data.employeeLoneName, updatedBy: data.updatedBy })
@@ -108,5 +130,7 @@ export const updateLone = async (
 
 // DELETE
 export const deleteLone = async (employeeLoneId: number) => {
-  await db.delete(employeeLoneModel).where(eq(employeeLoneModel.employeeLoneId, employeeLoneId))
+  await db
+    .delete(employeeLoneModel)
+    .where(eq(employeeLoneModel.employeeLoneId, employeeLoneId))
 }
