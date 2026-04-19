@@ -28,7 +28,7 @@ export const createEmployeeLeave = async (data: NewEmployeeLeave) => {
     throw BadRequestError('Start date cannot be after end date')
   }
 
-  // Fetch employee details
+  // Fetch employee
   const [employee] = await db
     .select()
     .from(employeeModel)
@@ -39,7 +39,7 @@ export const createEmployeeLeave = async (data: NewEmployeeLeave) => {
     throw BadRequestError('Employee not found')
   }
 
-  // Fetch leave type details
+  // Fetch leave type
   const [leaveType] = await db
     .select()
     .from(leaveTypeModel)
@@ -50,7 +50,7 @@ export const createEmployeeLeave = async (data: NewEmployeeLeave) => {
     throw BadRequestError('Leave type not found')
   }
 
-  // Check if employee is eligible for this leave type
+  // Check eligibility
   const [employeeLeaveType] = await db
     .select()
     .from(employeeLeaveTypeModel)
@@ -66,44 +66,54 @@ export const createEmployeeLeave = async (data: NewEmployeeLeave) => {
     throw BadRequestError('Employee is not eligible for this leave type')
   }
 
-  // Calculate number of leave days (excluding weekends? Assuming all days count)
+  // Calculate requested leave days
   const leaveDays =
     Math.ceil(
       (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
     ) + 1
 
-  // Get current year period
+  // Year period (adjust if needed)
   const currentYear = new Date().getFullYear()
-  const yearPeriod = leaveType.yearPeriod
+  const periodStartDate = new Date(currentYear, 0, 1)
+  const periodEndDate = new Date(currentYear, 11, 31)
 
-  // Calculate the start of the year period (assuming it's from Jan 1st or based on company policy)
-  // Adjust this based on your business logic
-  const periodStartDate = new Date(currentYear, 0, 1) // Jan 1st of current year
-  const periodEndDate = new Date(currentYear, 11, 31) // Dec 31st of current year
-
-  // Count existing leaves taken in this year period
-  const existingLeavesCountResult = await db
-    .select({ count: sql<number>`count(*)` })
+  // Fetch existing leaves (INCLUDING overlaps)
+  const existingLeaves = await db
+    .select({
+      startDate: employeeLeaveModel.startDate,
+      endDate: employeeLeaveModel.endDate,
+    })
     .from(employeeLeaveModel)
     .where(
       and(
         eq(employeeLeaveModel.employeeId, data.employeeId),
         eq(employeeLeaveModel.leaveTypeId, data.leaveTypeId),
-        sql`date(${employeeLeaveModel.startDate}) >= date(${periodStartDate.toISOString().split('T')[0]})`,
-        sql`date(${employeeLeaveModel.endDate}) <= date(${periodEndDate.toISOString().split('T')[0]})`
+        sql`date(${employeeLeaveModel.startDate}) <= date(${periodEndDate.toISOString().split('T')[0]}) AND
+            date(${employeeLeaveModel.endDate}) >= date(${periodStartDate.toISOString().split('T')[0]})`
       )
     )
 
-  const existingLeavesCount = existingLeavesCountResult[0]?.count || 0
+  // Calculate total taken leave days
+  let totalTakenLeaveDays = 0
 
-  // Check if total leaves (existing + new) exceeds totalLeaves
-  if (existingLeavesCount + leaveDays > leaveType.totalLeaves) {
+  for (const leave of existingLeaves) {
+    const start = new Date(leave.startDate)
+    const end = new Date(leave.endDate)
+
+    const days =
+      Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+
+    totalTakenLeaveDays += days
+  }
+
+  // Final validation
+  if (totalTakenLeaveDays + leaveDays > leaveType.totalLeaves) {
     throw BadRequestError(
-      `Cannot create leave. Employee has already taken ${existingLeavesCount} days out of ${leaveType.totalLeaves} total leaves for this leave type. Requested ${leaveDays} days.`
+      `Leave limit exceeded. Already taken ${totalTakenLeaveDays} days out of ${leaveType.totalLeaves}. Requested ${leaveDays} days.`
     )
   }
 
-  // Insert into employeeLeave table
+  // Insert leave
   const result = await db.insert(employeeLeaveModel).values({
     ...data,
     createdAt: now,
@@ -112,24 +122,31 @@ export const createEmployeeLeave = async (data: NewEmployeeLeave) => {
 
   const employeeLeaveId = Number(result.lastInsertRowid)
 
-  // Generate all dates between startDate and endDate
-  const dateArray = []
+  // Generate date array
+  const dateArray: Date[] = []
   let currentDate = new Date(startDate)
+
   while (currentDate <= endDate) {
     dateArray.push(new Date(currentDate))
     currentDate.setDate(currentDate.getDate() + 1)
   }
 
-  // Prepare attendance records
   const attendanceRecords = []
   const salaryComponentsToInsert = []
 
+  // Fetch absent deduction component once (OPTIMIZED)
+  const [salaryComponent] = await db
+    .select()
+    .from(otherSalaryComponentsModel)
+    .where(eq(otherSalaryComponentsModel.otherSalaryComponentId, 5))
+    .limit(1)
+
   for (const date of dateArray) {
-    const attendanceDate = date.toISOString().split('T')[0] // YYYY-MM-DD format
+    const attendanceDate = date.toISOString().split('T')[0]
     const salaryMonth = date.toLocaleString('default', { month: 'long' })
     const salaryYear = date.getFullYear()
 
-    // Check if attendance already exists for this date
+    // Check attendance exists
     const [existingAttendance] = await db
       .select()
       .from(employeeAttendanceModel)
@@ -147,50 +164,43 @@ export const createEmployeeLeave = async (data: NewEmployeeLeave) => {
       )
     }
 
-    // Add attendance record with isAbsent = 1
+    // Attendance insert
     attendanceRecords.push({
       employeeId: data.employeeId,
-      attendanceDate: attendanceDate,
+      attendanceDate,
       isAbsent: 1,
       createdBy: data.createdBy,
       createdAt: now,
     })
 
-    // Add other salary component (Absent deduction)
-    // Fetch the salary component amount for absent deduction (ID=5)
-    const [salaryComponent] = await db
-      .select()
-      .from(otherSalaryComponentsModel)
-      .where(eq(otherSalaryComponentsModel.otherSalaryComponentId, 5))
-      .limit(1)
-
+    // Salary deduction insert
     if (salaryComponent) {
       salaryComponentsToInsert.push({
         employeeId: data.employeeId,
-        otherSalaryComponentId: 5, // Absent deduction
-        salaryMonth: salaryMonth,
-        salaryYear: salaryYear,
+        otherSalaryComponentId: 5,
+        salaryMonth,
+        salaryYear,
         amount: salaryComponent.amount,
-        isAuthorized: 1, // Always authorized for leave
+        isAuthorized: 1,
         createdBy: data.createdBy,
         createdAt: now,
       })
     }
   }
 
-  // Insert attendance records
-  if (attendanceRecords.length > 0) {
+  // Bulk insert attendance
+  if (attendanceRecords.length) {
     await db.insert(employeeAttendanceModel).values(attendanceRecords)
   }
 
-  // Insert other salary components
-  if (salaryComponentsToInsert.length > 0) {
+  // Bulk insert salary components
+  if (salaryComponentsToInsert.length) {
     await db
       .insert(employeeOtherSalaryComponentsModel)
       .values(salaryComponentsToInsert)
   }
 
-  // Fetch and return the created leave
+  // Return created leave
   const [employeeLeave] = await db
     .select()
     .from(employeeLeaveModel)
