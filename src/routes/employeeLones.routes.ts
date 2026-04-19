@@ -4,7 +4,7 @@ import {
   getLonesController,
   updateLoneController,
   deleteLoneController,
-} from '../controllers/lones.controller'
+} from '../controllers/employeeLones.controller'
 import { authenticateUser } from '../middlewares/auth.middleware'
 
 const router = Router()

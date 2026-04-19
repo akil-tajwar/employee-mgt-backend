@@ -4,7 +4,7 @@ import {
   getLones,
   updateLone,
   deleteLone,
-} from '../services/lones.service'
+} from '../services/employeeLones.service'
 import { requirePermission } from '../services/utils/jwt.utils'
 
 export const createLoneController = async (

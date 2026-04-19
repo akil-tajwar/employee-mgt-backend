@@ -4,7 +4,6 @@ import {
   designationModel,
   employeeModel,
   employeeOtherSalaryComponentsModel,
-  leaveTypeModel,
   Lone,
   employeeLoneModel,
   NewLone,
@@ -14,10 +13,8 @@ import { BadRequestError } from './utils/errors.utils'
 
 // CREATE
 export const createLone = async (data: NewLone) => {
-  // Fetch employee's basic salary
   console.log('🚀 ~ createLone ~ data:', data)
-  console.log('Employee model table name:', employeeModel);
-// This will show you what table name Drizzle is actually using
+
   const [employee] = await db
     .select()
     .from(employeeModel)
@@ -28,7 +25,6 @@ export const createLone = async (data: NewLone) => {
     throw BadRequestError('Employee not found')
   }
 
-  // Validate that lone amount is less than or equal to basic salary
   if (data.amount > employee.basicSalary) {
     throw BadRequestError(
       `Lone amount (${data.amount}) cannot exceed employee's basic salary (${employee.basicSalary})`
@@ -46,31 +42,56 @@ export const createLone = async (data: NewLone) => {
 
   const employeeLoneId = Number(result.lastInsertRowid)
 
-  // Parse loan date to get month and year
+  // ---- INSTALLMENT LOGIC START ----
+
+  let remainingAmount = data.amount
+  const perMonth = data.perMonth
+
+  if (!perMonth || perMonth <= 0) {
+    throw BadRequestError('perMonth must be greater than 0')
+  }
+
   const loneDate = new Date(data.loneDate)
 
-  // Calculate next month
-  const nextMonthDate = new Date(loneDate)
-  nextMonthDate.setMonth(loneDate.getMonth() + 1)
+  // Start from next month
+  let currentDate = new Date(loneDate)
+  currentDate.setMonth(currentDate.getMonth() + 1)
 
-  const salaryMonth = nextMonthDate.toLocaleString('default', {
-    month: 'long',
-  })
-  const salaryYear = nextMonthDate.getFullYear()
+  const insertPayload: any[] = []
 
-  // Insert into employeeOtherSalaryComponents table
-  await db.insert(employeeOtherSalaryComponentsModel).values({
-    employeeId: data.employeeId,
-    otherSalaryComponentId: 6,
-    salaryMonth: salaryMonth,
-    salaryYear: salaryYear,
-    amount: data.amount,
-    isAuthorized: 0,
-    createdBy: data.createdBy,
-    createdAt: now,
-  })
+  while (remainingAmount > 0) {
+    const deductionAmount =
+      remainingAmount >= perMonth ? perMonth : remainingAmount
 
-  // Fetch and return the created lone
+    const salaryMonth = currentDate.toLocaleString('default', {
+      month: 'long',
+    })
+    const salaryYear = currentDate.getFullYear()
+
+    insertPayload.push({
+      employeeId: data.employeeId,
+      otherSalaryComponentId: 6,
+      salaryMonth,
+      salaryYear,
+      amount: deductionAmount,
+      isAuthorized: 1,
+      createdBy: data.createdBy,
+      createdAt: now,
+    })
+
+    remainingAmount -= deductionAmount
+
+    // Move to next month
+    currentDate.setMonth(currentDate.getMonth() + 1)
+  }
+
+  // Bulk insert all months
+  if (insertPayload.length > 0) {
+    await db.insert(employeeOtherSalaryComponentsModel).values(insertPayload)
+  }
+
+  // ---- INSTALLMENT LOGIC END ----
+
   const [lone] = await db
     .select()
     .from(employeeLoneModel)
@@ -88,6 +109,9 @@ export const getLones = async () => {
       employeeLoneName: employeeLoneModel.employeeLoneName,
       loneDate: employeeLoneModel.loneDate,
       employeeId: employeeLoneModel.employeeId,
+      amount: employeeLoneModel.amount,
+      perMonth: employeeLoneModel.perMonth,
+      description: employeeLoneModel.description,
       createdBy: employeeLoneModel.createdBy,
       createdAt: employeeLoneModel.createdAt,
       updatedBy: employeeLoneModel.updatedBy,
