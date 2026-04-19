@@ -352,6 +352,7 @@ export const employeeLoneModel = sqliteTable('employee_lones', {
     .notNull()
     .references(() => employeeModel.employeeId, { onDelete: 'cascade' }),
   amount: real('amount').notNull(),
+  perMonth: integer('per_month').notNull(),
   loneDate: text('lone_date').notNull(),
   description: text('description'),
   createdBy: integer('created_by').notNull(),

@@ -12,7 +12,7 @@ import employeeAttendanceRoutes from './employeeAttendances.routes'
 import otherSalaryComponentsRoutes from './otherSalaryComponents.routes'
 import employeeOtherSalaryComponentsRoutes from './employeeOtherSalaryComponents.routes'
 import salaryRoutes from './salary.routes'
-import employeeLoneRoutes from './lones.routes'
+import employeeLoneRoutes from './employeeLones.routes'
 import employeeLeaveroutes from './employeeLeaves.routes'
 import reportRoutes from './reports.routes'
 

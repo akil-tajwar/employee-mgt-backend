@@ -1,11 +1,20 @@
 import { db } from '../config/database'
-import { departmentModel, designationModel, employeeModel, employeeOtherSalaryComponentsModel, leaveTypeModel, Lone, employeeLoneModel, NewLone } from '../schemas'
+import {
+  departmentModel,
+  designationModel,
+  employeeModel,
+  employeeOtherSalaryComponentsModel,
+  Lone,
+  employeeLoneModel,
+  NewLone,
+} from '../schemas'
 import { eq } from 'drizzle-orm'
 import { BadRequestError } from './utils/errors.utils'
 
 // CREATE
 export const createLone = async (data: NewLone) => {
-  // Fetch employee's basic salary
+  console.log('🚀 ~ createLone ~ data:', data)
+
   const [employee] = await db
     .select()
     .from(employeeModel)
@@ -16,7 +25,6 @@ export const createLone = async (data: NewLone) => {
     throw BadRequestError('Employee not found')
   }
 
-  // Validate that lone amount is less than or equal to basic salary
   if (data.amount > employee.basicSalary) {
     throw BadRequestError(
       `Lone amount (${data.amount}) cannot exceed employee's basic salary (${employee.basicSalary})`
@@ -26,36 +34,64 @@ export const createLone = async (data: NewLone) => {
   const now = Date.now()
 
   // Insert into lones table
-  const result = await db
-    .insert(employeeLoneModel)
-    .values({
-      ...data,
-      createdAt: now,
-      updatedAt: now,
-    })
+  const result = await db.insert(employeeLoneModel).values({
+    ...data,
+    createdAt: now,
+    updatedAt: now,
+  })
 
   const employeeLoneId = Number(result.lastInsertRowid)
 
-  // Parse loan date to get month and year
+  // ---- INSTALLMENT LOGIC START ----
+
+  let remainingAmount = data.amount
+  const perMonth = data.perMonth
+
+  if (!perMonth || perMonth <= 0) {
+    throw BadRequestError('perMonth must be greater than 0')
+  }
+
   const loneDate = new Date(data.loneDate)
-  const salaryMonth = loneDate.toLocaleString('default', {
-    month: 'long',
-  })
-  const salaryYear = loneDate.getFullYear()
 
-  // Insert into employeeOtherSalaryComponents table
-  await db.insert(employeeOtherSalaryComponentsModel).values({
-    employeeId: data.employeeId,
-    otherSalaryComponentId: 6, // Lone component ID
-    salaryMonth: salaryMonth,
-    salaryYear: salaryYear,
-    amount: data.amount,
-    isAuthorized: 1, // Always authorized for lone
-    createdBy: data.createdBy,
-    createdAt: now,
-  })
+  // Start from next month
+  let currentDate = new Date(loneDate)
+  currentDate.setMonth(currentDate.getMonth() + 1)
 
-  // Fetch and return the created lone
+  const insertPayload: any[] = []
+
+  while (remainingAmount > 0) {
+    const deductionAmount =
+      remainingAmount >= perMonth ? perMonth : remainingAmount
+
+    const salaryMonth = currentDate.toLocaleString('default', {
+      month: 'long',
+    })
+    const salaryYear = currentDate.getFullYear()
+
+    insertPayload.push({
+      employeeId: data.employeeId,
+      otherSalaryComponentId: 6,
+      salaryMonth,
+      salaryYear,
+      amount: deductionAmount,
+      isAuthorized: 1,
+      createdBy: data.createdBy,
+      createdAt: now,
+    })
+
+    remainingAmount -= deductionAmount
+
+    // Move to next month
+    currentDate.setMonth(currentDate.getMonth() + 1)
+  }
+
+  // Bulk insert all months
+  if (insertPayload.length > 0) {
+    await db.insert(employeeOtherSalaryComponentsModel).values(insertPayload)
+  }
+
+  // ---- INSTALLMENT LOGIC END ----
+
   const [lone] = await db
     .select()
     .from(employeeLoneModel)
@@ -73,6 +109,9 @@ export const getLones = async () => {
       employeeLoneName: employeeLoneModel.employeeLoneName,
       loneDate: employeeLoneModel.loneDate,
       employeeId: employeeLoneModel.employeeId,
+      amount: employeeLoneModel.amount,
+      perMonth: employeeLoneModel.perMonth,
+      description: employeeLoneModel.description,
       createdBy: employeeLoneModel.createdBy,
       createdAt: employeeLoneModel.createdAt,
       updatedBy: employeeLoneModel.updatedBy,
@@ -84,15 +123,22 @@ export const getLones = async () => {
       departmentName: departmentModel.departmentName, // example field
     })
     .from(employeeLoneModel)
-    .leftJoin(employeeModel, eq(employeeLoneModel.employeeId, employeeModel.employeeId))
-    .leftJoin(designationModel, eq(employeeModel.designationId, designationModel.designationId))
-    .leftJoin(departmentModel, eq(employeeModel.departmentId, departmentModel.departmentId))
-};
+    .leftJoin(
+      employeeModel,
+      eq(employeeLoneModel.employeeId, employeeModel.employeeId)
+    )
+    .leftJoin(
+      designationModel,
+      eq(employeeModel.designationId, designationModel.designationId)
+    )
+    .leftJoin(
+      departmentModel,
+      eq(employeeModel.departmentId, departmentModel.departmentId)
+    )
+}
 
 // UPDATE
-export const updateLone = async (
-  data: Lone
-) => {
+export const updateLone = async (data: Lone) => {
   await db
     .update(employeeLoneModel)
     .set({ employeeLoneName: data.employeeLoneName, updatedBy: data.updatedBy })
@@ -108,5 +154,7 @@ export const updateLone = async (
 
 // DELETE
 export const deleteLone = async (employeeLoneId: number) => {
-  await db.delete(employeeLoneModel).where(eq(employeeLoneModel.employeeLoneId, employeeLoneId))
+  await db
+    .delete(employeeLoneModel)
+    .where(eq(employeeLoneModel.employeeLoneId, employeeLoneId))
 }

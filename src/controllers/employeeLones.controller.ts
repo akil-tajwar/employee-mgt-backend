@@ -4,7 +4,7 @@ import {
   getLones,
   updateLone,
   deleteLone,
-} from '../services/lones.service'
+} from '../services/employeeLones.service'
 import { requirePermission } from '../services/utils/jwt.utils'
 
 export const createLoneController = async (
@@ -14,8 +14,8 @@ export const createLoneController = async (
 ) => {
   try {
     // requirePermission(req, 'create_employee_lone')
-    const { data } = req.body
-    const lone = await createLone(data)
+    console.log("🚀 ~ createLoneController ~ req.body:", req.body)
+    const lone = await createLone(req.body)
     res.status(201).json({ status: 'success', data: lone })
   } catch (err) {
     next(err)
@@ -28,7 +28,7 @@ export const getLonesController = async (
   next: NextFunction
 ) => {
   try {
-    // requirePermission(req, 'viewe_mployee_lone')
+    // requirePermission(req, 'view_employee_lone')
     const lones = await getLones()
     res.json(lones)
   } catch (err) {
