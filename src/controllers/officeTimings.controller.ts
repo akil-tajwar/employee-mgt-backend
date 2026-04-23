@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import {
   createOfficeTiming,
   getAllOfficeTimings,
@@ -24,6 +24,25 @@ export const createOfficeTimingController = async (
     res.status(500).json({ message: 'Creation failed', error })
   }
 }
+
+// export const createOfficeTimingController = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   try {
+//     requirePermission(req, 'create_office_timing')
+
+//     const leaveTypes = await createOfficeTiming(req.body)
+
+//     res.status(201).json({
+//       status: 'success',
+//       data: leaveTypes,
+//     })
+//   } catch (err) {
+//     next(err)
+//   }
+// }
 
 /* UPDATE */
 export const updateOfficeTimingController = async (

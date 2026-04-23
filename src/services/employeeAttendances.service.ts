@@ -193,6 +193,7 @@ export const getAllEmployeeAttendances = async () => {
       lateInMinutes: employeeAttendanceModel.lateInMinutes,
       earlyOutMinutes: employeeAttendanceModel.earlyOutMinutes,
       isAbsent: employeeAttendanceModel.isAbsent,
+      isLeave: employeeAttendanceModel.isLeave,
       createdBy: employeeAttendanceModel.createdBy,
       createdAt: employeeAttendanceModel.createdAt,
       updatedBy: employeeAttendanceModel.updatedBy,

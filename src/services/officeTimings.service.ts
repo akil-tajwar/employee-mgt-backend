@@ -9,35 +9,34 @@ import {
 /* =========================
    CREATE
 ========================= */
-export const createOfficeTiming = async (data: {
+export const createOfficeTiming = (data: {
   startTime: string
   endTime: string
   weekendIds: number[]
   createdBy: number
 }) => {
-  return await db.transaction(async (tx) => {
-    // 1️⃣ Insert the office timing
-    const result = await tx.insert(officeTimingModel).values({
+  return db.transaction((tx) => {
+    // 1️⃣ Insert office timing
+    const result = tx.insert(officeTimingModel).values({
       startTime: data.startTime,
       endTime: data.endTime,
       createdBy: data.createdBy,
     })
 
-    // 2️⃣ Get the generated officeTimingId
-    const officeTimingId = result.lastInsertRowid
+    const officeTimingId = Number(result)
 
-    // 3️⃣ Insert weekends if provided
+    // 2️⃣ Insert weekends
     if (data.weekendIds?.length) {
-      await tx.insert(officeTimingWeekendsModel).values(
+      tx.insert(officeTimingWeekendsModel).values(
         data.weekendIds.map((weekendId) => ({
-          officeTimingId, // now guaranteed to exist
+          officeTimingId,
           weekendId,
           createdBy: data.createdBy,
         }))
       )
     }
 
-    // 4️⃣ Return the inserted office timing info
+    // 3️⃣ Return response
     return {
       officeTimingId,
       startTime: data.startTime,

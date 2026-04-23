@@ -169,6 +169,7 @@ export const createEmployeeLeave = async (data: NewEmployeeLeave) => {
       employeeId: data.employeeId,
       attendanceDate,
       isAbsent: 1,
+      isLeave: 1,
       createdBy: data.createdBy,
       createdAt: now,
     })

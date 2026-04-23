@@ -250,6 +250,7 @@ export const employeeAttendanceModel = sqliteTable('employee_attendances', {
   lateInMinutes: integer('late_in_minutes'),
   earlyOutMinutes: integer('early_out_minutes'),
   isAbsent: integer('is_absent').notNull().default(0),
+  isLeave: integer('is_leave').notNull().default(0),
   createdBy: integer('created_by').notNull(),
   createdAt: integer('created_at').default(sql`(unixepoch())`),
   updatedBy: integer('updated_by'),
