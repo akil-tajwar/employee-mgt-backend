@@ -5,15 +5,16 @@ import { BadRequestError } from './utils/errors.utils'
 
 // Create
 export const createOtherSalaryComponent = async (
-  otherSalaryComponentData: Omit<NewOtherSalaryComponent, 'otherSalaryComponentId' | 'updatedAt' | 'updatedBy'>
+  otherSalaryComponentData: Omit<
+    NewOtherSalaryComponent,
+    'otherSalaryComponentId' | 'updatedAt' | 'updatedBy'
+  >
 ) => {
   try {
-    const result = await db
-      .insert(otherSalaryComponentsModel)
-      .values({
-        ...otherSalaryComponentData,
-        createdAt: new Date().getTime(),
-      })
+    const result = await db.insert(otherSalaryComponentsModel).values({
+      ...otherSalaryComponentData,
+      createdAt: new Date().getTime(),
+    })
 
     // Return the inserted data with the generated ID
     return {
@@ -32,11 +33,18 @@ export const getAllOtherSalaryComponents = async () => {
 }
 
 // Get By Id
-export const getOtherSalaryComponentById = async (otherSalaryComponentId: number) => {
+export const getOtherSalaryComponentById = async (
+  otherSalaryComponentId: number
+) => {
   const otherSalaryComponent = await db
     .select()
     .from(otherSalaryComponentsModel)
-    .where(eq(otherSalaryComponentsModel.otherSalaryComponentId, otherSalaryComponentId))
+    .where(
+      eq(
+        otherSalaryComponentsModel.otherSalaryComponentId,
+        otherSalaryComponentId
+      )
+    )
     .limit(1)
 
   if (!otherSalaryComponent.length) {
@@ -54,7 +62,12 @@ export const editOtherSalaryComponent = async (
   const [updatedOtherSalaryComponent] = await db
     .update(otherSalaryComponentsModel)
     .set(otherSalaryComponentData)
-    .where(eq(otherSalaryComponentsModel.otherSalaryComponentId, otherSalaryComponentId))
+    .where(
+      eq(
+        otherSalaryComponentsModel.otherSalaryComponentId,
+        otherSalaryComponentId
+      )
+    )
 
   if (!updatedOtherSalaryComponent) {
     throw BadRequestError('Cloth otherSalaryComponent not found')
@@ -64,9 +77,16 @@ export const editOtherSalaryComponent = async (
 }
 
 // Delete
-export const deleteOtherSalaryComponent = async (otherSalaryComponentId: number) => {
+export const deleteOtherSalaryComponent = async (
+  otherSalaryComponentId: number
+) => {
   const result = await db
     .delete(otherSalaryComponentsModel)
-    .where(eq(otherSalaryComponentsModel.otherSalaryComponentId, otherSalaryComponentId));
-  return { message: "Fees Group deleted successfully" };
-};
+    .where(
+      eq(
+        otherSalaryComponentsModel.otherSalaryComponentId,
+        otherSalaryComponentId
+      )
+    )
+  return { message: 'Other salary component deleted successfully' }
+}

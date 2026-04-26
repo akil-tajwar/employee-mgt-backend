@@ -7,6 +7,7 @@ import {
   Lone,
   employeeLoneModel,
   NewLone,
+  otherSalaryComponentsModel,
 } from '../schemas'
 import { eq } from 'drizzle-orm'
 import { BadRequestError } from './utils/errors.utils'
@@ -31,6 +32,19 @@ export const createLone = async (data: NewLone) => {
     )
   }
 
+  // Fetch lone salary component where isLoneFee = 1 (or true)
+  const [loneSalaryComponent] = await db
+    .select()
+    .from(otherSalaryComponentsModel)
+    .where(eq(otherSalaryComponentsModel.isLoneFee, 1))
+    .limit(1)
+
+  if (!loneSalaryComponent) {
+    throw BadRequestError(
+      'Lone salary component not configured. Please contact administrator.'
+    )
+  }
+
   const now = Date.now()
 
   // Insert into lones table
@@ -43,7 +57,6 @@ export const createLone = async (data: NewLone) => {
   const employeeLoneId = Number(result.lastInsertRowid)
 
   // ---- INSTALLMENT LOGIC START ----
-
   let remainingAmount = data.amount
   const perMonth = data.perMonth
 
@@ -70,7 +83,7 @@ export const createLone = async (data: NewLone) => {
 
     insertPayload.push({
       employeeId: data.employeeId,
-      otherSalaryComponentId: 6,
+      otherSalaryComponentId: loneSalaryComponent.otherSalaryComponentId, // Dynamic ID from where isLoneFee = 1
       salaryMonth,
       salaryYear,
       amount: deductionAmount,
@@ -91,7 +104,6 @@ export const createLone = async (data: NewLone) => {
   }
 
   // ---- INSTALLMENT LOGIC END ----
-
   const [lone] = await db
     .select()
     .from(employeeLoneModel)

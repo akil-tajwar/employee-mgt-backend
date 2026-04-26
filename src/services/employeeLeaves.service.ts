@@ -134,12 +134,18 @@ export const createEmployeeLeave = async (data: NewEmployeeLeave) => {
   const attendanceRecords = []
   const salaryComponentsToInsert = []
 
-  // Fetch absent deduction component once (OPTIMIZED)
+  // Fetch absent deduction component where isAbsentFee = 1
   const [salaryComponent] = await db
     .select()
     .from(otherSalaryComponentsModel)
-    .where(eq(otherSalaryComponentsModel.otherSalaryComponentId, 5))
+    .where(eq(otherSalaryComponentsModel.isAbsentFee, 1))
     .limit(1)
+
+  if (!salaryComponent) {
+    throw BadRequestError(
+      'Absent fee salary component not configured. Please contact administrator.'
+    )
+  }
 
   for (const date of dateArray) {
     const attendanceDate = date.toISOString().split('T')[0]
@@ -174,11 +180,11 @@ export const createEmployeeLeave = async (data: NewEmployeeLeave) => {
       createdAt: now,
     })
 
-    // Salary deduction insert
+    // Salary deduction insert - using the fetched salaryComponent's id
     if (salaryComponent) {
       salaryComponentsToInsert.push({
         employeeId: data.employeeId,
-        otherSalaryComponentId: 5,
+        otherSalaryComponentId: salaryComponent.otherSalaryComponentId, // Dynamic ID from where isAbsentFee = 1
         salaryMonth,
         salaryYear,
         amount: salaryComponent.amount,

@@ -76,6 +76,8 @@ export const getAllEmployeeOtherSalaryComponents = async () => {
       otherSalaryComponentId: otherSalaryComponentsModel.otherSalaryComponentId,
       componentName: otherSalaryComponentsModel.componentName, // adjust
       componentType: otherSalaryComponentsModel.componentType, // adjust
+      isAbsentFee: otherSalaryComponentsModel.isAbsentFee, // adjust
+      isLoneFee: otherSalaryComponentsModel.isLoneFee, // adjust
 
       // Salary data
       salaryMonth: employeeOtherSalaryComponentsModel.salaryMonth,
