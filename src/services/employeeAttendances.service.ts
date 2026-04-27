@@ -24,6 +24,39 @@ export const createEmployeeAttendance = async (
   const records = Array.isArray(data) ? data : [data]
   const now = Date.now()
 
+  // Fetch salary components dynamically at the beginning
+  const [absentFeeComponent] = await db
+    .select()
+    .from(otherSalaryComponentsModel)
+    .where(eq(otherSalaryComponentsModel.isAbsentFee, 1))
+    .limit(1)
+
+  const [lateEarlyOutFeeComponent] = await db
+    .select()
+    .from(otherSalaryComponentsModel)
+    .where(eq(otherSalaryComponentsModel.isLateEarlyOutFee, 1))
+    .limit(1)
+
+  // Validate that required components exist
+  const hasAbsentRecords = records.some((item) => item.isAbsent === 1)
+  const hasLateEarlyOutRecords = records.some(
+    (item) =>
+      (item.lateInMinutes && item.lateInMinutes > 0) ||
+      (item.earlyOutMinutes && item.earlyOutMinutes > 0)
+  )
+
+  if (hasAbsentRecords && !absentFeeComponent) {
+    throw BadRequestError(
+      'Absent fee salary component not configured. Please contact administrator.'
+    )
+  }
+
+  if (hasLateEarlyOutRecords && !lateEarlyOutFeeComponent) {
+    throw BadRequestError(
+      'Late/Early out fee salary component not configured. Please contact administrator.'
+    )
+  }
+
   // Collect conflicts
   const conflicts = []
   for (const item of records) {
@@ -67,78 +100,64 @@ export const createEmployeeAttendance = async (
     })
     const salaryYear = attendanceDate.getFullYear()
 
-    let otherSalaryComponentId = null
+    let salaryComponentToUse = null
 
     // Determine which other salary component to add
     if (item.isAbsent === 1) {
-      otherSalaryComponentId = 5 // Absent deduction
+      salaryComponentToUse = absentFeeComponent
     } else if (
       (item.lateInMinutes && item.lateInMinutes > 0) ||
       (item.earlyOutMinutes && item.earlyOutMinutes > 0)
     ) {
-      otherSalaryComponentId = 2 // Late/Early out deduction
+      salaryComponentToUse = lateEarlyOutFeeComponent
     }
 
     // If we need to add a salary component
-    if (otherSalaryComponentId) {
-      // Fetch the salary component details including forDays
-      const [salaryComponent] = await db
-        .select()
-        .from(otherSalaryComponentsModel)
-        .where(
-          eq(
-            otherSalaryComponentsModel.otherSalaryComponentId,
-            otherSalaryComponentId
-          )
-        )
-        .limit(1)
+    if (salaryComponentToUse) {
+      let isAuthorized = 1 // Default to authorized
 
-      if (salaryComponent) {
-        let isAuthorized = 1 // Default to authorized
-
-        // Check if forDays is 0, then always authorized
-        if (salaryComponent.forDays === 0) {
-          isAuthorized = 1
-        } else {
-          // Get count of existing records for this employee, month, year, and component
-          const existingCountResult = await db
-            .select({ count: sql<number>`count(*)` })
-            .from(employeeOtherSalaryComponentsModel)
-            .where(
-              and(
-                eq(
-                  employeeOtherSalaryComponentsModel.employeeId,
-                  item.employeeId
-                ),
-                eq(
-                  employeeOtherSalaryComponentsModel.otherSalaryComponentId,
-                  otherSalaryComponentId
-                ),
-                eq(employeeOtherSalaryComponentsModel.salaryMonth, salaryMonth),
-                eq(employeeOtherSalaryComponentsModel.salaryYear, salaryYear)
-              )
+      // Check if forDays is 0, then always authorized
+      if (salaryComponentToUse.forDays === 0) {
+        isAuthorized = 1
+      } else {
+        // Get count of existing records for this employee, month, year, and component
+        const existingCountResult = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(employeeOtherSalaryComponentsModel)
+          .where(
+            and(
+              eq(
+                employeeOtherSalaryComponentsModel.employeeId,
+                item.employeeId
+              ),
+              eq(
+                employeeOtherSalaryComponentsModel.otherSalaryComponentId,
+                salaryComponentToUse.otherSalaryComponentId
+              ),
+              eq(employeeOtherSalaryComponentsModel.salaryMonth, salaryMonth),
+              eq(employeeOtherSalaryComponentsModel.salaryYear, salaryYear)
             )
+          )
 
-          const existingCount = existingCountResult[0]?.count || 0
+        const existingCount = existingCountResult[0]?.count || 0
 
-          // Calculate isAuthorized based on forDays cycle
-          const forDays = salaryComponent.forDays || 1 // Default to 1 if null/undefined
-          // The cycle: first forDays entries = authorized, next forDays = unauthorized, repeats
-          const cyclePosition = existingCount % (forDays * 2)
-          isAuthorized = cyclePosition < forDays ? 1 : 0
-        }
-
-        salaryComponentsToInsert.push({
-          employeeId: item.employeeId,
-          otherSalaryComponentId: otherSalaryComponentId,
-          salaryMonth: salaryMonth,
-          salaryYear: salaryYear,
-          amount: salaryComponent.amount,
-          isAuthorized: isAuthorized,
-          createdBy: item.createdBy,
-          createdAt: now,
-        })
+        // Calculate isAuthorized based on forDays cycle
+        const forDays = salaryComponentToUse.forDays || 1 // Default to 1 if null/undefined
+        // The cycle: first forDays entries = authorized, next forDays = unauthorized, repeats
+        const cyclePosition = existingCount % (forDays * 2)
+        isAuthorized = cyclePosition < forDays ? 1 : 0
       }
+
+      salaryComponentsToInsert.push({
+        employeeId: item.employeeId,
+        otherSalaryComponentId: salaryComponentToUse.otherSalaryComponentId,
+        salaryMonth: salaryMonth,
+        salaryYear: salaryYear,
+        amount: salaryComponentToUse.amount,
+        isAuthorized: isAuthorized,
+        createdBy: item.createdBy,
+        createdAt: now,
+      })
     }
   }
 
@@ -193,6 +212,7 @@ export const getAllEmployeeAttendances = async () => {
       lateInMinutes: employeeAttendanceModel.lateInMinutes,
       earlyOutMinutes: employeeAttendanceModel.earlyOutMinutes,
       isAbsent: employeeAttendanceModel.isAbsent,
+      isLeave: employeeAttendanceModel.isLeave,
       createdBy: employeeAttendanceModel.createdBy,
       createdAt: employeeAttendanceModel.createdAt,
       updatedBy: employeeAttendanceModel.updatedBy,

@@ -250,6 +250,7 @@ export const employeeAttendanceModel = sqliteTable('employee_attendances', {
   lateInMinutes: integer('late_in_minutes'),
   earlyOutMinutes: integer('early_out_minutes'),
   isAbsent: integer('is_absent').notNull().default(0),
+  isLeave: integer('is_leave').notNull().default(0),
   createdBy: integer('created_by').notNull(),
   createdAt: integer('created_at').default(sql`(unixepoch())`),
   updatedBy: integer('updated_by'),
@@ -267,6 +268,9 @@ export const otherSalaryComponentsModel = sqliteTable(
     amount: integer().notNull(),
     forDays: integer('for_days').notNull(),
     status: integer('status').notNull().default(1),
+    isAbsentFee: integer('is_absent_fee').notNull().default(0),
+    isLoneFee: integer('is_lone_fee').notNull().default(0),
+    isLateEarlyOutFee: integer('is_late_early_out_fee').notNull().default(0),
     createdBy: integer('created_by').notNull(),
     createdAt: integer('created_at').default(sql`(unixepoch())`),
     updatedBy: integer('updated_by'),
@@ -296,10 +300,15 @@ export const employeeOtherSalaryComponentsModel = sqliteTable(
       .references(() => otherSalaryComponentsModel.otherSalaryComponentId, {
         onDelete: 'cascade',
       }),
+    employeeLoneId: integer('employee_lone_id').references(
+      () => employeeLoneModel.employeeLoneId,
+      { onDelete: 'set null' }
+    ),
     salaryMonth: text('salary_month').notNull(), // e.g., 'January', 'February', etc.
     salaryYear: integer('salary_year').notNull(), // e.g., 2024
     amount: real('amount').notNull(),
     isAuthorized: integer('is_authorized').notNull(),
+    isSkipped: integer('is_skipped').notNull().default(0),
     createdBy: integer('created_by').notNull(),
     createdAt: integer('created_at').default(sql`(unixepoch())`),
     updatedBy: integer('updated_by'),
@@ -346,7 +355,9 @@ export const salaryModel = sqliteTable(
 )
 
 export const employeeLoneModel = sqliteTable('employee_lones', {
-  employeeLoneId: integer('employee_lone_id').primaryKey({ autoIncrement: true }),
+  employeeLoneId: integer('employee_lone_id').primaryKey({
+    autoIncrement: true,
+  }),
   employeeLoneName: text('employee_lone_name').notNull(),
   employeeId: integer('employee_id')
     .notNull()
@@ -477,6 +488,10 @@ export const employeeOtherSalaryComponentsRelations = relations(
     otherSalaryComponent: one(otherSalaryComponentsModel, {
       fields: [employeeOtherSalaryComponentsModel.otherSalaryComponentId],
       references: [otherSalaryComponentsModel.otherSalaryComponentId],
+    }),
+    employeeLone: one(employeeLoneModel, {
+      fields: [employeeOtherSalaryComponentsModel.employeeLoneId],
+      references: [employeeLoneModel.employeeLoneId],
     }),
   })
 )
