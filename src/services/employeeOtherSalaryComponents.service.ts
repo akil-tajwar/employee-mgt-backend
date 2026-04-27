@@ -85,6 +85,8 @@ export const getAllEmployeeOtherSalaryComponents = async () => {
       amount: employeeOtherSalaryComponentsModel.amount,
       isAuthorized: employeeOtherSalaryComponentsModel.isAuthorized,
 
+      isSkipped: employeeOtherSalaryComponentsModel.isSkipped,
+      employeeLoneId: employeeOtherSalaryComponentsModel.employeeLoneId,
       createdAt: employeeOtherSalaryComponentsModel.createdAt,
     })
     .from(employeeOtherSalaryComponentsModel)

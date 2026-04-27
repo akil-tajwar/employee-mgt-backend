@@ -9,8 +9,8 @@ import {
   NewLone,
   otherSalaryComponentsModel,
 } from '../schemas'
-import { eq } from 'drizzle-orm'
-import { BadRequestError } from './utils/errors.utils'
+import { and, eq, sql } from 'drizzle-orm'
+import { BadRequestError, NotFoundError } from './utils/errors.utils'
 
 // CREATE
 export const createLone = async (data: NewLone) => {
@@ -83,11 +83,13 @@ export const createLone = async (data: NewLone) => {
 
     insertPayload.push({
       employeeId: data.employeeId,
-      otherSalaryComponentId: loneSalaryComponent.otherSalaryComponentId, // Dynamic ID from where isLoneFee = 1
+      otherSalaryComponentId: loneSalaryComponent.otherSalaryComponentId,
+      employeeLoneId: employeeLoneId, // ← Added this line
       salaryMonth,
       salaryYear,
       amount: deductionAmount,
       isAuthorized: 1,
+      isSkipped: 0, // Added default value for clarity
       createdBy: data.createdBy,
       createdAt: now,
     })
@@ -169,4 +171,168 @@ export const deleteLone = async (employeeLoneId: number) => {
   await db
     .delete(employeeLoneModel)
     .where(eq(employeeLoneModel.employeeLoneId, employeeLoneId))
+}
+
+interface SkipLoneParams {
+  employeeOtherSalaryComponentId: number
+  updatedBy: number
+}
+
+// Helper function to convert month name to number
+function getMonthNumber(monthName: string): number {
+  const months = {
+    January: 0,
+    February: 1,
+    March: 2,
+    April: 3,
+    May: 4,
+    June: 5,
+    July: 6,
+    August: 7,
+    September: 8,
+    October: 9,
+    November: 10,
+    December: 11,
+  }
+  return months[monthName as keyof typeof months]
+}
+
+// Helper: convert month + year to Date
+function toDate(month: string, year: number): Date {
+  return new Date(year, getMonthNumber(month), 1)
+}
+
+export const skipLoneInstallment = async (params: SkipLoneParams) => {
+  const { employeeOtherSalaryComponentId, updatedBy } = params
+
+  // Get the installment to skip
+  const [installment] = await db
+    .select()
+    .from(employeeOtherSalaryComponentsModel)
+    .where(
+      eq(
+        employeeOtherSalaryComponentsModel.employeeOtherSalaryComponentId,
+        employeeOtherSalaryComponentId
+      )
+    )
+    .limit(1)
+
+  if (!installment) {
+    throw NotFoundError('Lone installment not found')
+  }
+
+  // Check if already skipped
+  if (installment.isSkipped === 1) {
+    throw BadRequestError('This installment is already skipped')
+  }
+
+  // Check if installment is authorized
+  if (installment.isAuthorized !== 1) {
+    throw BadRequestError('Cannot skip unauthorized installment')
+  }
+
+  const employeeLoneId = installment.employeeLoneId
+
+  if (!employeeLoneId) {
+    throw BadRequestError('No lone associated with this installment')
+  }
+
+  const now = Date.now()
+
+  // Mark current installment as skipped
+  await db
+    .update(employeeOtherSalaryComponentsModel)
+    .set({
+      isSkipped: 1,
+      updatedBy: updatedBy,
+      updatedAt: now,
+    })
+    .where(
+      eq(
+        employeeOtherSalaryComponentsModel.employeeOtherSalaryComponentId,
+        employeeOtherSalaryComponentId
+      )
+    )
+
+  const skippedAmount = installment.amount
+
+  // Get all installments under this loan
+  const allInstallments = await db
+    .select()
+    .from(employeeOtherSalaryComponentsModel)
+    .where(
+      eq(employeeOtherSalaryComponentsModel.employeeLoneId, employeeLoneId)
+    )
+
+  if (!allInstallments.length) {
+    throw BadRequestError('No installments found for this loan')
+  }
+
+  // ✅ Find the TRUE last installment using Date comparison
+  const lastInstallment = allInstallments.reduce((latest, current) => {
+    const currentDate = toDate(current.salaryMonth, current.salaryYear)
+    const latestDate = toDate(latest.salaryMonth, latest.salaryYear)
+
+    return currentDate > latestDate ? current : latest
+  })
+
+  // ✅ Add 1 month to the LAST installment date
+  const nextDate = new Date(
+    lastInstallment.salaryYear,
+    getMonthNumber(lastInstallment.salaryMonth),
+    1
+  )
+
+  nextDate.setMonth(nextDate.getMonth() + 1)
+
+  const newSalaryMonth = nextDate.toLocaleString('default', { month: 'long' })
+  const newSalaryYear = nextDate.getFullYear()
+
+  // Insert new installment
+  await db.insert(employeeOtherSalaryComponentsModel).values({
+    employeeId: installment.employeeId,
+    otherSalaryComponentId: installment.otherSalaryComponentId,
+    employeeLoneId: employeeLoneId,
+    salaryMonth: newSalaryMonth,
+    salaryYear: newSalaryYear,
+    amount: skippedAmount,
+    isAuthorized: 1,
+    isSkipped: 0,
+    createdBy: updatedBy,
+    createdAt: now,
+  })
+
+  // Get updated installments (ordered properly using JS sort)
+  const updatedInstallments = (
+    await db
+      .select()
+      .from(employeeOtherSalaryComponentsModel)
+      .where(
+        eq(employeeOtherSalaryComponentsModel.employeeLoneId, employeeLoneId)
+      )
+  ).sort((a, b) => {
+    const dateA = toDate(a.salaryMonth, a.salaryYear).getTime()
+    const dateB = toDate(b.salaryMonth, b.salaryYear).getTime()
+    return dateA - dateB
+  })
+
+  return {
+    message: 'Lone installment skipped successfully',
+    employeeLoneId,
+    skippedAmount,
+    skippedInstallment: {
+      month: installment.salaryMonth,
+      year: installment.salaryYear,
+      amount: installment.amount,
+    },
+    newInstallment: {
+      month: newSalaryMonth,
+      year: newSalaryYear,
+      amount: skippedAmount,
+    },
+    remainingInstallments: updatedInstallments.filter(
+      (inst) => inst.isSkipped === 0 && inst.isAuthorized === 1
+    ).length,
+    installments: updatedInstallments,
+  }
 }
