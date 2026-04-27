@@ -168,11 +168,22 @@ export const updateLone = async (data: Lone) => {
 
 // DELETE
 export const deleteLone = async (employeeLoneId: number) => {
-  await db
-    .delete(employeeLoneModel)
-    .where(eq(employeeLoneModel.employeeLoneId, employeeLoneId))
+  await db.transaction(async (trx) => {
+    // Delete related records first
+    await trx
+      .delete(employeeOtherSalaryComponentsModel)
+      .where(
+        eq(employeeOtherSalaryComponentsModel.employeeLoneId, employeeLoneId)
+      )
+
+    // Then delete the loan record
+    await trx
+      .delete(employeeLoneModel)
+      .where(eq(employeeLoneModel.employeeLoneId, employeeLoneId))
+  })
 }
 
+//skip lone
 interface SkipLoneParams {
   employeeOtherSalaryComponentId: number
   updatedBy: number
