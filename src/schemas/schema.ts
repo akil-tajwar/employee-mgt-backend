@@ -87,7 +87,7 @@ export const employeeModel = sqliteTable(
   {
     employeeId: integer('employee_id').primaryKey({ autoIncrement: true }),
     fullName: text('full_name').notNull(),
-    email: text('email').notNull().unique(),
+    email: text('email'),
     officialPhone: text('official_phone').notNull().unique(),
     personalPhone: text('personal_phone'),
     presentAddress: text('present_address').notNull(),

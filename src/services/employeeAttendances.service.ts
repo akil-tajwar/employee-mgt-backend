@@ -118,7 +118,7 @@ export const createEmployeeAttendance = async (
 
       // Check if forDays is 0, then always authorized
       if (salaryComponentToUse.forDays === 0) {
-        isAuthorized = 1
+        isAuthorized = 0
       } else {
         // Get count of existing records for this employee, month, year, and component
         const existingCountResult = await db
