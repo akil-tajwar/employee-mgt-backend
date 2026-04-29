@@ -203,7 +203,7 @@ export const salaryReport = async (salaryMonth: string, salaryYear: number) => {
   }
 }
 
-export const loneReport = async (startDate: string, endDate: string) => {
+export const loneReport = async (fromDate: string, toDate: string) => {
   const rows = await db
     .select({
       // lone data
@@ -262,8 +262,8 @@ export const loneReport = async (startDate: string, endDate: string) => {
     )
     .where(
       and(
-        gte(employeeLoneModel.loneDate, startDate),
-        lte(employeeLoneModel.loneDate, endDate)
+        gte(employeeLoneModel.loneDate, fromDate),
+        lte(employeeLoneModel.loneDate, toDate)
       )
     )
     .orderBy(

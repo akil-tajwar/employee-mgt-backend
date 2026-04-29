@@ -69,24 +69,21 @@ export const loneReportController = async (
   try {
     requirePermission(req, 'view_lone_report')
 
-    const { startDate, endDate } = req.query
+    const { fromDate, toDate } = req.query
 
-    if (!startDate || !endDate) {
+    if (!fromDate || !toDate) {
       res.status(400).json({
         success: false,
-        message: 'startDate and endDate are required',
+        message: 'fromDate and toDate are required',
       })
     }
 
     const data = await loneReport(
-      startDate as string,
-      endDate as string
+      fromDate as string,
+      toDate as string
     )
 
-    res.status(200).json({
-      success: true,
-      data,
-    })
+    res.status(200).json(data)
   } catch (error) {
     console.error('Lone report error:', error)
 
