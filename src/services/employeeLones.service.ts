@@ -84,12 +84,12 @@ export const createLone = async (data: NewLone) => {
     insertPayload.push({
       employeeId: data.employeeId,
       otherSalaryComponentId: loneSalaryComponent.otherSalaryComponentId,
-      employeeLoneId: employeeLoneId, // ← Added this line
+      employeeLoneId: employeeLoneId,
       salaryMonth,
       salaryYear,
       amount: deductionAmount,
       isAuthorized: 1,
-      isSkipped: 0, // Added default value for clarity
+      isSkipped: 0,
       createdBy: data.createdBy,
       createdAt: now,
     })

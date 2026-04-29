@@ -18,17 +18,60 @@ export const createSalaries = async (
   >
 ) => {
   try {
+    const currentTime = new Date().getTime()
+
+    // Check duplicate salary for same employee + month + year
+    for (const salary of salariesData) {
+      const existingSalary = await db.query.salaryModel.findFirst({
+        where: and(
+          eq(salaryModel.employeeId, salary.employeeId),
+          eq(salaryModel.salaryMonth, salary.salaryMonth),
+          eq(salaryModel.salaryYear, salary.salaryYear)
+        ),
+      })
+
+      if (existingSalary) {
+        throw new Error(
+          `Salary already exists for employee ID ${salary.employeeId} for ${salary.salaryMonth} ${salary.salaryYear}`
+        )
+      }
+    }
+
     const salariesWithTimestamps = salariesData.map((salary) => ({
       ...salary,
-      createdAt: new Date().getTime(),
+      createdAt: currentTime,
     }))
 
+    // Insert salaries
     const result = await db.insert(salaryModel).values(salariesWithTimestamps)
 
-    // Return the inserted data with generated IDs
+    // Update employee other salary components
+    for (const salary of salariesData) {
+      await db
+        .update(employeeOtherSalaryComponentsModel)
+        .set({
+          isSalaryGiven: 1,
+          updatedAt: currentTime,
+        })
+        .where(
+          and(
+            eq(
+              employeeOtherSalaryComponentsModel.employeeId,
+              salary.employeeId
+            ),
+            eq(
+              employeeOtherSalaryComponentsModel.salaryMonth,
+              salary.salaryMonth
+            ),
+            eq(employeeOtherSalaryComponentsModel.salaryYear, salary.salaryYear)
+          )
+        )
+    }
+
+    // Return inserted data with generated IDs
     return salariesWithTimestamps.map((salary, index) => ({
       ...salary,
-      salaryId: result.insertId + index, // Adjust based on your ORM
+      salaryId: result.insertId + index,
     }))
   } catch (error) {
     throw error
