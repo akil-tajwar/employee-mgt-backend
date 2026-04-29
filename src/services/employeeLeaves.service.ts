@@ -147,6 +147,11 @@ export const createEmployeeLeave = async (data: NewEmployeeLeave) => {
     )
   }
 
+  // Get employee's basic salary for percentage calculation
+  const basicSalary = employee.basicSalary || 0
+  const percentageValue = salaryComponent.amount || 0
+  const calculatedAmount = (basicSalary * percentageValue) / 100
+
   for (const date of dateArray) {
     const attendanceDate = date.toISOString().split('T')[0]
     const salaryMonth = date.toLocaleString('default', { month: 'long' })
@@ -184,10 +189,10 @@ export const createEmployeeLeave = async (data: NewEmployeeLeave) => {
     if (salaryComponent) {
       salaryComponentsToInsert.push({
         employeeId: data.employeeId,
-        otherSalaryComponentId: salaryComponent.otherSalaryComponentId, // Dynamic ID from where isAbsentFee = 1
+        otherSalaryComponentId: salaryComponent.otherSalaryComponentId,
         salaryMonth,
         salaryYear,
-        amount: salaryComponent.amount,
+        amount: calculatedAmount,
         isAuthorized: 1,
         createdBy: data.createdBy,
         createdAt: now,

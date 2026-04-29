@@ -15,6 +15,7 @@ import salaryRoutes from './salary.routes'
 import employeeLoneRoutes from './employeeLones.routes'
 import employeeLeaveroutes from './employeeLeaves.routes'
 import reportRoutes from './reports.routes'
+import dashboardRoutes from './dashboard.routes'
 
 const router = Router()
 
@@ -37,5 +38,6 @@ router.use('/salary', salaryRoutes)
 router.use('/employeeLones', employeeLoneRoutes)
 router.use('/employeeLeaves', employeeLeaveroutes)
 router.use('/reports', reportRoutes)
+router.use('/dashboard', dashboardRoutes)
 
 export default router
