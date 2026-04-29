@@ -4,6 +4,7 @@ import {
   departmentModel,
   designationModel,
   employeeAttendanceModel,
+  employeeLoneModel,
   employeeModel,
   employeeOtherSalaryComponentsModel,
   otherSalaryComponentsModel,
@@ -200,4 +201,121 @@ export const salaryReport = async (salaryMonth: string, salaryYear: number) => {
       transformedSalary.length === 1 ? transformedSalary[0] : transformedSalary,
     otherSalary: transformedOtherSalary,
   }
+}
+
+export const loneReport = async (startDate: string, endDate: string) => {
+  const rows = await db
+    .select({
+      // lone data
+      employeeLoneId: employeeLoneModel.employeeLoneId,
+      employeeLoneName: employeeLoneModel.employeeLoneName,
+      loneAmount: employeeLoneModel.amount,
+      perMonth: employeeLoneModel.perMonth,
+      loneDate: employeeLoneModel.loneDate,
+      loneDescription: employeeLoneModel.description,
+
+      // employee data
+      employeeId: employeeModel.employeeId,
+      employeeName: employeeModel.fullName,
+      empCode: employeeModel.empCode,
+
+      // department
+      departmentId: departmentModel.departmentId,
+      departmentName: departmentModel.departmentName,
+
+      // designation
+      designationId: designationModel.designationId,
+      designationName: designationModel.designationName,
+
+      // installment data
+      employeeOtherSalaryComponentId:
+        employeeOtherSalaryComponentsModel.employeeOtherSalaryComponentId,
+      otherSalaryComponentId:
+        employeeOtherSalaryComponentsModel.otherSalaryComponentId,
+      salaryMonth: employeeOtherSalaryComponentsModel.salaryMonth,
+      salaryYear: employeeOtherSalaryComponentsModel.salaryYear,
+      installmentAmount: employeeOtherSalaryComponentsModel.amount,
+      isAuthorized: employeeOtherSalaryComponentsModel.isAuthorized,
+      isSkipped: employeeOtherSalaryComponentsModel.isSkipped,
+      isSalaryGiven: employeeOtherSalaryComponentsModel.isSalaryGiven,
+      installmentCreatedAt: employeeOtherSalaryComponentsModel.createdAt,
+    })
+    .from(employeeLoneModel)
+    .leftJoin(
+      employeeModel,
+      eq(employeeLoneModel.employeeId, employeeModel.employeeId)
+    )
+    .leftJoin(
+      designationModel,
+      eq(employeeModel.designationId, designationModel.designationId)
+    )
+    .leftJoin(
+      departmentModel,
+      eq(employeeModel.departmentId, departmentModel.departmentId)
+    )
+    .leftJoin(
+      employeeOtherSalaryComponentsModel,
+      eq(
+        employeeLoneModel.employeeLoneId,
+        employeeOtherSalaryComponentsModel.employeeLoneId
+      )
+    )
+    .where(
+      and(
+        gte(employeeLoneModel.loneDate, startDate),
+        lte(employeeLoneModel.loneDate, endDate)
+      )
+    )
+    .orderBy(
+      employeeLoneModel.employeeLoneId,
+      employeeOtherSalaryComponentsModel.salaryYear,
+      employeeOtherSalaryComponentsModel.salaryMonth
+    )
+
+  const groupedMap = new Map()
+
+  for (const row of rows) {
+    const loneId = row.employeeLoneId
+
+    if (!groupedMap.has(loneId)) {
+      groupedMap.set(loneId, {
+        lone: {
+          employeeLoneId: row.employeeLoneId,
+          employeeLoneName: row.employeeLoneName,
+          amount: row.loneAmount,
+          perMonth: row.perMonth,
+          loneDate: row.loneDate,
+          description: row.loneDescription,
+
+          employeeId: row.employeeId,
+          employeeName: row.employeeName,
+          empCode: row.empCode,
+
+          departmentId: row.departmentId,
+          departmentName: row.departmentName,
+
+          designationId: row.designationId,
+          designationName: row.designationName,
+        },
+
+        installments: [],
+      })
+    }
+
+    if (row.employeeOtherSalaryComponentId) {
+      groupedMap.get(loneId).installments.push({
+        employeeOtherSalaryComponentId: row.employeeOtherSalaryComponentId,
+        otherSalaryComponentId: row.otherSalaryComponentId,
+        salaryMonth: row.salaryMonth,
+        salaryYear: row.salaryYear,
+        amount: row.installmentAmount,
+        isAuthorized: row.isAuthorized,
+        isSkipped: row.isSkipped,
+        isSalaryGiven: row.isSalaryGiven,
+        createdAt: row.installmentCreatedAt,
+      })
+    }
+  }
+
+  return Array.from(groupedMap.values())
 }

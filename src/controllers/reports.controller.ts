@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { requirePermission } from '../services/utils/jwt.utils'
 import {
   employeeAttendanceReport,
+  loneReport,
   salaryReport,
 } from '../services/reports.service'
 
@@ -57,6 +58,41 @@ export const salaryReportController = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch salary report',
+    })
+  }
+}
+
+export const loneReportController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    requirePermission(req, 'view_lone_report')
+
+    const { startDate, endDate } = req.query
+
+    if (!startDate || !endDate) {
+      res.status(400).json({
+        success: false,
+        message: 'startDate and endDate are required',
+      })
+    }
+
+    const data = await loneReport(
+      startDate as string,
+      endDate as string
+    )
+
+    res.status(200).json({
+      success: true,
+      data,
+    })
+  } catch (error) {
+    console.error('Lone report error:', error)
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch lone report',
     })
   }
 }

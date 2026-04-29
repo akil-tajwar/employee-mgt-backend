@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '../config/database'
 import {
   employeeAttendanceModel,
@@ -55,6 +55,27 @@ export const createEmployeeAttendance = async (
     throw BadRequestError(
       'Late/Early out fee salary component not configured. Please contact administrator.'
     )
+  }
+
+  // Fetch all unique employees' basic salaries for optimization
+  const uniqueEmployeeIds = [...new Set(records.map((r) => r.employeeId))]
+  const employees = await db
+    .select({
+      employeeId: employeeModel.employeeId,
+      basicSalary: employeeModel.basicSalary,
+    })
+    .from(employeeModel)
+    .where(inArray(employeeModel.employeeId, uniqueEmployeeIds))
+
+  const employeeSalaryMap = new Map(
+    employees.map((e) => [e.employeeId, e.basicSalary || 0])
+  )
+
+  // Validate all employees exist
+  for (const employeeId of uniqueEmployeeIds) {
+    if (!employeeSalaryMap.has(employeeId)) {
+      throw BadRequestError(`Employee with ID ${employeeId} not found`)
+    }
   }
 
   // Collect conflicts
@@ -116,7 +137,14 @@ export const createEmployeeAttendance = async (
     if (salaryComponentToUse) {
       let isAuthorized = 1 // Default to authorized
 
-      // Check if forDays is 0, then always authorized
+      // Get employee's basic salary
+      const basicSalary = employeeSalaryMap.get(item.employeeId) || 0
+
+      // Calculate actual amount based on percentage
+      const percentageValue = salaryComponentToUse.amount || 0
+      const calculatedAmount = (basicSalary * percentageValue) / 100
+
+      // Check if forDays is 0, then always unauthorized
       if (salaryComponentToUse.forDays === 0) {
         isAuthorized = 0
       } else {
@@ -153,7 +181,7 @@ export const createEmployeeAttendance = async (
         otherSalaryComponentId: salaryComponentToUse.otherSalaryComponentId,
         salaryMonth: salaryMonth,
         salaryYear: salaryYear,
-        amount: salaryComponentToUse.amount,
+        amount: calculatedAmount,
         isAuthorized: isAuthorized,
         createdBy: item.createdBy,
         createdAt: now,
